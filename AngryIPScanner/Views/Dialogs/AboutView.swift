@@ -3,9 +3,17 @@ import SwiftUI
 struct AboutView: View {
     var body: some View {
         VStack(spacing: 16) {
-            Image(nsImage: NSApplication.shared.applicationIconImage)
-                .resizable()
-                .frame(width: 96, height: 96)
+            if let icon = NSImage(named: "AppIcon") {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 96, height: 96)
+            } else {
+                Image(systemName: "network")
+                    .resizable()
+                    .frame(width: 96, height: 96)
+                    .foregroundStyle(.green)
+            }
 
             Text("Angry IP Scanner")
                 .font(.title)
