@@ -13,6 +13,7 @@ struct FeederAreaView: View {
     @State private var mode: FeederMode = .range
     @State private var cidrIP: String = ""
     @State private var cidrPrefix: Int = 24
+    @State private var didAutoFillCIDR = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -24,6 +25,11 @@ struct FeederAreaView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 160)
+            .onChange(of: mode) { _, newMode in
+                if newMode == .cidr && cidrIP.isEmpty {
+                    autoFillCIDR()
+                }
+            }
 
             // Input fields
             switch mode {
@@ -151,5 +157,37 @@ struct FeederAreaView: View {
 
     private func uint32ToIP(_ n: UInt32) -> String {
         "\(n >> 24 & 0xFF).\(n >> 16 & 0xFF).\(n >> 8 & 0xFF).\(n & 0xFF)"
+    }
+
+    private func autoFillCIDR() {
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return }
+        defer { freeifaddrs(first) }
+
+        for ptr in sequence(first: first, next: { $0.pointee.ifa_next }) {
+            let addr = ptr.pointee.ifa_addr.pointee
+            guard addr.sa_family == UInt8(AF_INET) else { continue }
+            let name = String(cString: ptr.pointee.ifa_name)
+            guard name.hasPrefix("en") else { continue }
+
+            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            guard getnameinfo(ptr.pointee.ifa_addr, socklen_t(addr.sa_len),
+                             &hostname, socklen_t(hostname.count),
+                             nil, 0, NI_NUMERICHOST) == 0 else { continue }
+            let ipStr = String(cString: hostname)
+            if ipStr.hasPrefix("127.") { continue }
+
+            cidrIP = ipStr
+
+            // Get prefix length from netmask
+            if let netmask = ptr.pointee.ifa_netmask {
+                let maskAddr = netmask.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
+                let maskInt = UInt32(bigEndian: maskAddr.sin_addr.s_addr)
+                cidrPrefix = maskInt.nonzeroBitCount
+            }
+
+            applyCIDR()
+            return
+        }
     }
 }
