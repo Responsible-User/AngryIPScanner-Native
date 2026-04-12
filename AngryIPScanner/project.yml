@@ -27,6 +27,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: net.azib.ipscan
         PRODUCT_NAME: Angry IP Scanner
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_GENERATION_MODE: GeneratedByXcode
         MARKETING_VERSION: "4.0.0"
