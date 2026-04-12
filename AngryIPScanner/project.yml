@@ -1,0 +1,51 @@
+name: AngryIPScanner
+options:
+  bundleIdPrefix: net.azib
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  AngryIPScanner:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+      - path: Bridge
+        excludes:
+          - "*.dylib"
+          - "*.h"
+      - path: Views
+      - path: Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.azib.ipscan
+        PRODUCT_NAME: Angry IP Scanner
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_GENERATION_MODE: GeneratedByXcode
+        MARKETING_VERSION: "4.0.0"
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_OBJC_BRIDGING_HEADER: Bridge/AngryIPScanner-Bridging-Header.h
+        LIBRARY_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/Bridge"
+        HEADER_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/Bridge"
+        OTHER_LDFLAGS:
+          - "-lipscan"
+          - "-rpath"
+          - "@executable_path/../Frameworks"
+        SWIFT_STRICT_CONCURRENCY: complete
+        ENABLE_APP_SANDBOX: false
+        CODE_SIGN_ENTITLEMENTS: ""
+    postCompileScripts:
+      - script: |
+          mkdir -p "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}"
+          cp "${PROJECT_DIR}/Bridge/libipscan.dylib" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/"
+          install_name_tool -id "@rpath/libipscan.dylib" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib"
+        name: "Copy libipscan.dylib"

@@ -7,3 +7,6 @@
 .DS_Store
 .claude/settings.json
 .claude/plans/
+AngryIPScanner/Bridge/libipscan.dylib
+AngryIPScanner/Bridge/libipscan.h
+AngryIPScanner/AngryIPScanner.xcodeproj/

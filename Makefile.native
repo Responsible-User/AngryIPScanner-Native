@@ -1,0 +1,25 @@
+# Build the native Go + Swift app
+.PHONY: all go swift clean test
+
+all: go swift
+
+# Build the Go shared library
+go:
+	cd libipscan && go build -buildmode=c-shared -o ../AngryIPScanner/Bridge/libipscan.dylib
+
+# Build the Swift app (requires go target first)
+swift: go
+	cd AngryIPScanner && xcodebuild -scheme AngryIPScanner -configuration Debug build
+
+# Run all Go tests
+test:
+	cd libipscan && go test ./... -v
+
+# Clean build artifacts
+clean:
+	rm -f AngryIPScanner/Bridge/libipscan.dylib AngryIPScanner/Bridge/libipscan.h
+	cd AngryIPScanner && xcodebuild clean 2>/dev/null || true
+
+# Regenerate Xcode project from project.yml (requires xcodegen)
+xcode:
+	cd AngryIPScanner && xcodegen generate
