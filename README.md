@@ -1,41 +1,117 @@
-# Angry IP Scanner
+# Angry IP Scanner (Native)
 
-This is the source code of Angry IP Scanner, licensed with GPL v2. [Official site](https://angryip.org/)
+A fast and friendly network scanner, rewritten as a native macOS app with a cross-platform Go core.
 
-The code is written mostly in Java.
-[SWT library from Eclipse project](https://eclipse.org/swt/) is used for GUI that provides native components for each supported platform.
+This is a ground-up rewrite of [Angry IP Scanner](https://angryip.org/) — the Java/SWT codebase has been replaced with **Go** (scanning engine) and **Swift/SwiftUI** (macOS UI). No Java, no JVM.
 
-The project runs on Linux, Windows and macOS. 
+## Download
 
-## Helping / Contributing
+Grab the latest signed and notarized build from [Releases](../../releases).
 
-As there are millions of different networks, configurations and devices, please help with submitting a **Pull Request** if something
-doesn't work as you expect (especially macOS users). Any problem is easy to fix if you have an environment to reproduce it 😀
+**macOS 14 (Sonoma) or later required.** Apple Silicon and Intel supported.
 
-For that, download [Intellij IDEA community edition](https://www.jetbrains.com/idea/download/) and open the cloned project.
-Then, you can run Angry IP Scanner in Debug mode and put a breakpoint into the [desired Fetcher class](src/net/azib/ipscan/fetchers).
+## Features
 
-## Building [![Actions Status](https://github.com/angryip/ipscan/workflows/CI/badge.svg)](https://github.com/angryip/ipscan/actions)
+- **Network scanning** — ping sweep with TCP, UDP, ICMP, or combined pingers
+- **12 data fetchers** — IP, Ping, TTL, Hostname, Ports, Filtered Ports, MAC Address, MAC Vendor, Web detect, NetBIOS, Packet Loss, Comments
+- **3 input modes** — IP range, CIDR (auto-detected from your network), file import
+- **5 export formats** — CSV, TXT, XML, IP list, SQL
+- **Native macOS UI** — SwiftUI with dark mode, Retina, proper menu bar, Preferences window
+- **38,000+ MAC vendor database** embedded in the binary
+- **CIDR auto-detection** — detects your local subnet and prefix length on launch
+- **Result filtering** — show all, alive only, or hosts with open ports
+- **Sortable columns** — click any column header
+- **Code signed and notarized** by Apple
 
-Use Gradle for building a package for your desired platform:
+## Architecture
 
-`./gradlew` or `make` in the project dir for the list of available targets.
-
-`./gradlew current` would build the app for your current platform
-
-The resulting binaries will be put into the `build/libs` directory.
-Run jar files with `java -jar <jar-file>`.
-
-Deb and rpm packages can be built only on Linux (tested on Ubuntu). 
-Windows installer can be built on Windows only.
-
-`./gradlew all` will build packages for all OS (tested on Ubuntu only, see dependencies below).
-
-### Dependencies
-
-On Ubuntu install the following packages:
 ```
-sudo apt install openjdk-21-jdk rpm fakeroot
+┌──────────────────────────────────────┐
+│         SwiftUI (macOS UI)           │
+│  MainWindow, ResultTable, Prefs...   │
+└──────────────┬───────────────────────┘
+               │ JSON over C FFI
+┌──────────────┴───────────────────────┐
+│          Go Core (libipscan)         │
+│  Scanner engine, pingers, fetchers,  │
+│  feeders, exporters, config          │
+└──────────────────────────────────────┘
 ```
 
-Install OpenJDK on other platforms as you usually do it.
+The Go core compiles to a `.dylib` shared library via `cgo`. The Swift UI calls it through C function pointers, with JSON strings crossing the FFI boundary. This architecture allows future Windows/Linux UIs to share the same Go core.
+
+## Building
+
+### Prerequisites
+
+- **Go** 1.21+ (`brew install go`)
+- **Xcode** 16+ with command line tools
+- **xcodegen** (`brew install xcodegen`)
+
+### Build
+
+```bash
+# Build Go shared library
+cd libipscan
+go build -buildmode=c-shared -o ../AngryIPScanner/Bridge/libipscan.dylib
+install_name_tool -id "@rpath/libipscan.dylib" ../AngryIPScanner/Bridge/libipscan.dylib
+cd ..
+
+# Generate Xcode project and build
+cd AngryIPScanner
+xcodegen generate
+xcodebuild -scheme AngryIPScanner -configuration Release build
+```
+
+Or use the Makefile:
+
+```bash
+make -f Makefile.native all
+```
+
+### Run tests
+
+```bash
+cd libipscan && go test ./...
+```
+
+## Project Structure
+
+```
+libipscan/           # Go core (cross-platform)
+  ipnet/             #   IP arithmetic, port parsing
+  scanner/           #   Scan engine, state machine, results
+  pinger/            #   TCP, UDP, ICMP, combined pingers
+  fetcher/           #   12 data fetchers
+  feeder/            #   Range, random, file feeders
+  exporter/          #   CSV, TXT, XML, IP list, SQL
+  config/            #   JSON config persistence
+  resources/         #   Embedded MAC vendor database
+  main.go            #   C API exports (cgo)
+
+AngryIPScanner/      # Swift/SwiftUI (macOS UI)
+  App/               #   App entry point, menu commands
+  Bridge/            #   C FFI wrapper, Codable models
+  Views/             #   SwiftUI views and dialogs
+  Resources/         #   Asset catalog (app icon)
+
+legacy/              # Original Java/SWT source (reference only)
+```
+
+## License
+
+This project is based on [Angry IP Scanner](https://github.com/angryip/ipscan) by Anton Keks, licensed under the **GNU General Public License v2 (GPLv2)**.
+
+As a derivative work, this rewrite is also licensed under **GPLv2**. See [LICENSE](LICENSE) for the full text.
+
+### Attribution
+
+- Original Angry IP Scanner by [Anton Keks](https://github.com/angryip/ipscan) and contributors
+- MAC vendor database (IEEE OUI) from the original project
+- App icon from the original project
+
+## Contributing
+
+Pull requests welcome. The Go core is the best place to contribute cross-platform improvements. The Swift UI layer is macOS-specific.
+
+For bugs, open an issue with your macOS version, network setup, and steps to reproduce.
