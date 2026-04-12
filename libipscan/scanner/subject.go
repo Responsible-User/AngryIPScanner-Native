@@ -41,6 +41,14 @@ type ScanningSubject struct {
 	parameters map[string]interface{}
 }
 
+// UpgradeResultType sets the result type only if the new type is higher priority.
+// Priority order: UNKNOWN < DEAD < ALIVE < WITH_PORTS
+func (s *ScanningSubject) UpgradeResultType(rt ResultType) {
+	if rt > s.ResultType {
+		s.ResultType = rt
+	}
+}
+
 // NewScanningSubject creates a new scanning subject for the given IP.
 func NewScanningSubject(address net.IP) *ScanningSubject {
 	return &ScanningSubject{

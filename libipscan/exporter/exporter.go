@@ -1,11 +1,7 @@
 // Package exporter provides scan result export to various file formats.
 package exporter
 
-import (
-	"io"
-
-	"github.com/angryip/libipscan/scanner"
-)
+import "io"
 
 // Exporter writes scan results to an output stream in a specific format.
 type Exporter interface {
