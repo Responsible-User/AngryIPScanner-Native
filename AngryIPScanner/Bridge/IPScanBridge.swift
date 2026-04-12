@@ -1,5 +1,27 @@
 import Foundation
 
+// MARK: - Free C callback functions (must be at file scope, completely nonisolated)
+
+private func resultCallbackFunc(_ jsonPtr: UnsafePointer<CChar>?, _ ctx: UnsafeMutableRawPointer?) {
+    guard let jsonPtr else { return }
+    let json = String(cString: jsonPtr)
+    let idValue = Int(bitPattern: ctx)
+    DispatchQueue.main.async {
+        CallbackRouter.shared.handleResult(bridgeID: idValue, json: json)
+    }
+}
+
+private func progressCallbackFunc(_ jsonPtr: UnsafePointer<CChar>?, _ ctx: UnsafeMutableRawPointer?) {
+    guard let jsonPtr else { return }
+    let json = String(cString: jsonPtr)
+    let idValue = Int(bitPattern: ctx)
+    DispatchQueue.main.async {
+        CallbackRouter.shared.handleProgress(bridgeID: idValue, json: json)
+    }
+}
+
+// MARK: - IPScanBridge
+
 /// Swift wrapper around the libipscan C API.
 /// All Go interactions go through this class.
 @MainActor
@@ -39,7 +61,13 @@ final class IPScanBridge {
             return
         }
 
-        setupCallbacks()
+        // Register in callback router and set up callbacks
+        CallbackRouter.shared.register(self)
+        let bridgeID = CallbackRouter.shared.id(for: self)
+        let ctxPtr = UnsafeMutableRawPointer(bitPattern: bridgeID)
+
+        ipscan_set_result_callback(handle, resultCallbackFunc, ctxPtr)
+        ipscan_set_progress_callback(handle, progressCallbackFunc, ctxPtr)
 
         let mutableStr = strdup(jsonStr)
         let result = ipscan_start_scan(handle, mutableStr)
@@ -107,32 +135,7 @@ final class IPScanBridge {
         }
     }
 
-    // MARK: - Callbacks
-
-    private func setupCallbacks() {
-        // Store self in the static registry to prevent ARC deallocation during callbacks
-        CallbackRouter.shared.register(self)
-
-        let bridgeID = CallbackRouter.shared.id(for: self)
-
-        ipscan_set_result_callback(handle, { jsonPtr, ctx in
-            guard let jsonPtr else { return }
-            let json = String(cString: jsonPtr)
-            let idValue = unsafeBitCast(ctx, to: Int.self)
-            DispatchQueue.main.async {
-                CallbackRouter.shared.handleResult(bridgeID: idValue, json: json)
-            }
-        }, unsafeBitCast(bridgeID, to: UnsafeMutableRawPointer?.self))
-
-        ipscan_set_progress_callback(handle, { jsonPtr, ctx in
-            guard let jsonPtr else { return }
-            let json = String(cString: jsonPtr)
-            let idValue = unsafeBitCast(ctx, to: Int.self)
-            DispatchQueue.main.async {
-                CallbackRouter.shared.handleProgress(bridgeID: idValue, json: json)
-            }
-        }, unsafeBitCast(bridgeID, to: UnsafeMutableRawPointer?.self))
-    }
+    // MARK: - Internal callback handlers (called on main thread by CallbackRouter)
 
     fileprivate func handleResult(json: String) {
         guard let result = try? decoder.decode(ScanResult.self, from: Data(json.utf8)) else {
@@ -156,7 +159,7 @@ final class IPScanBridge {
     }
 }
 
-// MARK: - Callback Router (non-isolated intermediary)
+// MARK: - Callback Router
 
 /// Routes C callbacks from Go goroutines to the correct IPScanBridge instance
 /// on the main thread, avoiding Swift concurrency isolation issues.
@@ -169,7 +172,6 @@ final class CallbackRouter: @unchecked Sendable {
 
     func register(_ bridge: IPScanBridge) {
         lock.lock()
-        // Remove any existing entry for this bridge
         bridges = bridges.filter { $0.value !== bridge }
         bridges[nextID] = bridge
         nextID += 1
