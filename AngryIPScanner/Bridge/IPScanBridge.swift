@@ -135,6 +135,17 @@ final class IPScanBridge {
         }
     }
 
+    // MARK: - Export
+
+    func exportResults(format: String, to url: URL) -> Bool {
+        let formatStr = strdup(format)
+        let pathStr = strdup(url.path)
+        let result = ipscan_export(handle, formatStr, pathStr)
+        free(formatStr)
+        free(pathStr)
+        return result == 0
+    }
+
     // MARK: - Internal callback handlers (called on main thread by CallbackRouter)
 
     fileprivate func handleResult(json: String) {

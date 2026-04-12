@@ -6,6 +6,7 @@ struct AngryIPScannerApp: App {
     @State private var showAbout = false
     @State private var showStatistics = false
     @State private var showSelectFetchers = false
+    @State private var showExportPanel = false
 
     var body: some Scene {
         WindowGroup {
@@ -16,6 +17,15 @@ struct AngryIPScannerApp: App {
         }
         .defaultSize(width: 900, height: 500)
         .commands {
+            // File menu: export
+            CommandGroup(after: .newItem) {
+                Button("Export Results...") {
+                    exportResults()
+                }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
+                .disabled(bridge.stats.total == 0)
+            }
+
             // Replace the default About menu item
             CommandGroup(replacing: .appInfo) {
                 Button("About Angry IP Scanner") {
@@ -89,6 +99,42 @@ struct AngryIPScannerApp: App {
 
         Settings {
             PreferencesView(bridge: bridge)
+        }
+    }
+
+    private func exportResults() {
+        let panel = NSSavePanel()
+        panel.title = "Export Scan Results"
+        panel.allowedContentTypes = [
+            .commaSeparatedText,
+            .plainText,
+            .xml,
+        ]
+        panel.allowsOtherFileTypes = true
+        panel.nameFieldStringValue = "scan_results.csv"
+
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+
+            let ext = url.pathExtension.lowercased()
+            let format: String
+            switch ext {
+            case "csv": format = "csv"
+            case "txt": format = "txt"
+            case "xml": format = "xml"
+            case "lst": format = "iplist"
+            case "sql": format = "sql"
+            default: format = "csv"
+            }
+
+            let success = bridge.exportResults(format: format, to: url)
+            if !success {
+                let alert = NSAlert()
+                alert.messageText = "Export Failed"
+                alert.informativeText = "Could not export results to \(url.lastPathComponent)"
+                alert.alertStyle = .warning
+                alert.runModal()
+            }
         }
     }
 }

@@ -17,12 +17,15 @@ static inline void call_progress_cb(ProgressCallback cb, const char* json, void*
 */
 import "C"
 import (
+	"bufio"
 	"encoding/json"
+	"os"
 	"sync"
 	"time"
 	"unsafe"
 
 	"github.com/angryip/libipscan/config"
+	"github.com/angryip/libipscan/exporter"
 	"github.com/angryip/libipscan/feeder"
 	"github.com/angryip/libipscan/fetcher"
 	_ "github.com/angryip/libipscan/resources"
@@ -344,6 +347,62 @@ func ipscan_get_available_fetchers(handle C.int) *C.char {
 	}
 	j, _ := json.Marshal(fetchers)
 	return C.CString(string(j))
+}
+
+//export ipscan_export
+func ipscan_export(handle C.int, formatStr *C.char, pathStr *C.char) C.int {
+	inst := getInstance(int(handle))
+	if inst == nil {
+		return -1
+	}
+
+	format := C.GoString(formatStr)
+	path := C.GoString(pathStr)
+
+	var exp exporter.Exporter
+	switch format {
+	case "csv":
+		exp = &exporter.CSVExporter{}
+	case "txt":
+		exp = &exporter.TXTExporter{}
+	case "xml":
+		exp = &exporter.XMLExporter{}
+	case "iplist":
+		exp = &exporter.IPListExporter{}
+	case "sql":
+		exp = &exporter.SQLExporter{}
+	default:
+		return -2
+	}
+
+	// Get fetcher names from the last scan's fetchers
+	names := []string{"IP", "Ping", "TTL", "Hostname", "Ports", "Filtered Ports",
+		"MAC Address", "MAC Vendor", "Web detect", "NetBIOS Info", "Packet Loss", "Comment"}
+	exp.SetFetchers(names)
+
+	f, err := os.Create(path)
+	if err != nil {
+		return -3
+	}
+	defer f.Close()
+
+	w := bufio.NewWriter(f)
+	if err := exp.Start(w, ""); err != nil {
+		return -4
+	}
+
+	results := inst.results.All()
+	for _, r := range results {
+		if err := exp.WriteResult(w, r.Values); err != nil {
+			return -5
+		}
+	}
+
+	if err := exp.End(w); err != nil {
+		return -6
+	}
+	w.Flush()
+	return 0
 }
 
 //export ipscan_free_string
