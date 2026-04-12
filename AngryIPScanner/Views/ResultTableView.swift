@@ -18,24 +18,46 @@ struct ResultTableView: View {
                         .font(.system(.body, design: .monospaced))
                 }
             }
-            .width(min: 120, ideal: 150)
+            .width(min: 120, ideal: 140)
 
             TableColumn("Ping") { result in
                 Text(valueAt(index: 1, in: result))
                     .font(.system(.body, design: .monospaced))
             }
-            .width(min: 60, ideal: 80)
+            .width(min: 50, ideal: 70)
 
             TableColumn("TTL") { result in
                 Text(valueAt(index: 2, in: result))
                     .font(.system(.body, design: .monospaced))
             }
-            .width(min: 40, ideal: 60)
+            .width(min: 35, ideal: 50)
 
             TableColumn("Hostname") { result in
                 Text(valueAt(index: 3, in: result))
             }
-            .width(min: 120, ideal: 200)
+            .width(min: 100, ideal: 180)
+
+            TableColumn("Ports") { result in
+                Text(valueAt(index: 4, in: result))
+                    .font(.system(.body, design: .monospaced))
+            }
+            .width(min: 60, ideal: 100)
+
+            TableColumn("MAC Address") { result in
+                Text(valueAt(index: 6, in: result))
+                    .font(.system(.body, design: .monospaced))
+            }
+            .width(min: 100, ideal: 140)
+
+            TableColumn("MAC Vendor") { result in
+                Text(valueAt(index: 7, in: result))
+            }
+            .width(min: 80, ideal: 120)
+
+            TableColumn("Web detect") { result in
+                Text(valueAt(index: 8, in: result))
+            }
+            .width(min: 80, ideal: 120)
         } rows: {
             ForEach(sortedResults) { result in
                 TableRow(result)

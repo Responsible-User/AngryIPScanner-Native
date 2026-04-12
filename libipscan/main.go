@@ -25,6 +25,7 @@ import (
 	"github.com/angryip/libipscan/config"
 	"github.com/angryip/libipscan/feeder"
 	"github.com/angryip/libipscan/fetcher"
+	_ "github.com/angryip/libipscan/resources"
 	"github.com/angryip/libipscan/scanner"
 )
 
@@ -145,9 +146,11 @@ func ipscan_set_progress_callback(handle C.int, cb C.ProgressCallback, ctx unsaf
 
 // FeederConfig describes which feeder to use and its parameters.
 type FeederConfig struct {
-	Type    string `json:"type"`
-	StartIP string `json:"startIP,omitempty"`
-	EndIP   string `json:"endIP,omitempty"`
+	Type     string `json:"type"`
+	StartIP  string `json:"startIP,omitempty"`
+	EndIP    string `json:"endIP,omitempty"`
+	Count    int    `json:"count,omitempty"`
+	FilePath string `json:"filePath,omitempty"`
 }
 
 //export ipscan_start_scan
@@ -175,26 +178,49 @@ func ipscan_start_scan(handle C.int, feederJSON *C.char) C.int {
 			return -3
 		}
 		f = rf
+	case "random":
+		rf, err := feeder.NewRandomFeeder(fc.StartIP, fc.EndIP, fc.Count)
+		if err != nil {
+			return -3
+		}
+		f = rf
+	case "file":
+		ff, err := feeder.NewFileFeeder(fc.FilePath)
+		if err != nil {
+			return -3
+		}
+		f = ff
 	default:
 		return -4
 	}
 
-	// Create fetchers
+	// Create all fetchers
 	cfg := inst.config.Scanner
 	pingTimeout := time.Duration(cfg.PingTimeout) * time.Millisecond
 	pingFetcher := fetcher.NewPingFetcher(cfg.SelectedPinger, pingTimeout, cfg.PingCount, cfg.ScanDeadHosts)
+	macFetcher := fetcher.NewMACFetcher()
+	portsFetcher := fetcher.NewPortsFetcher(cfg.PortString, cfg.PortTimeout, cfg.AdaptPortTimeout, cfg.MinPortTimeout, cfg.UseRequestedPorts)
 
-	fetchers := []scanner.Fetcher{
+	allFetchers := []scanner.Fetcher{
 		&fetcher.IPFetcher{},
 		pingFetcher,
 		fetcher.NewPingTTLFetcher(pingFetcher),
 		&fetcher.HostnameFetcher{},
+		portsFetcher,
+		fetcher.NewFilteredPortsFetcher(portsFetcher),
+		macFetcher,
+		fetcher.NewMACVendorFetcher(macFetcher),
+		fetcher.NewWebDetectFetcher(cfg.PortTimeout),
+		fetcher.NewNetBIOSInfoFetcher(cfg.PortTimeout),
+		fetcher.NewPacketLossFetcher(pingFetcher),
+		fetcher.NewCommentFetcher(inst.config.Comments),
 	}
 
 	// Apply selected fetcher filter if configured
+	fetchers := allFetchers
 	if len(cfg.SelectedFetcherIDs) > 0 {
 		fetcherMap := make(map[string]scanner.Fetcher)
-		for _, ft := range fetchers {
+		for _, ft := range allFetchers {
 			fetcherMap[ft.ID()] = ft
 		}
 		var selected []scanner.Fetcher
@@ -307,6 +333,14 @@ func ipscan_get_available_fetchers(handle C.int) *C.char {
 		{"id": "fetcher.ping", "name": "Ping"},
 		{"id": "fetcher.ping.ttl", "name": "TTL"},
 		{"id": "fetcher.hostname", "name": "Hostname"},
+		{"id": "fetcher.ports", "name": "Ports"},
+		{"id": "fetcher.ports.filtered", "name": "Filtered Ports"},
+		{"id": "fetcher.mac", "name": "MAC Address"},
+		{"id": "fetcher.mac.vendor", "name": "MAC Vendor"},
+		{"id": "fetcher.webDetect", "name": "Web detect"},
+		{"id": "fetcher.netbios", "name": "NetBIOS Info"},
+		{"id": "fetcher.packetloss", "name": "Packet Loss"},
+		{"id": "fetcher.comment", "name": "Comment"},
 	}
 	j, _ := json.Marshal(fetchers)
 	return C.CString(string(j))
