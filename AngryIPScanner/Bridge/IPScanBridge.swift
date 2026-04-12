@@ -5,8 +5,6 @@ import Foundation
 @MainActor
 @Observable
 final class IPScanBridge {
-    /// The handle is nonisolated(unsafe) so deinit can access it.
-    /// It's only mutated during init (main actor) and read in deinit.
     nonisolated(unsafe) private var handle: Int32 = 0
 
     // Observable state
@@ -41,7 +39,6 @@ final class IPScanBridge {
             return
         }
 
-        // Set up callbacks before starting
         setupCallbacks()
 
         let mutableStr = strdup(jsonStr)
@@ -112,37 +109,32 @@ final class IPScanBridge {
 
     // MARK: - Callbacks
 
-    /// Prevent ARC from invalidating self while C callbacks are active.
-    nonisolated(unsafe) private static var activeBridges: Set<ObjectIdentifier> = []
-    nonisolated(unsafe) private static var bridgeMap: [ObjectIdentifier: IPScanBridge] = [:]
-
     private func setupCallbacks() {
-        let id = ObjectIdentifier(self)
-        IPScanBridge.activeBridges.insert(id)
-        IPScanBridge.bridgeMap[id] = self
+        // Store self in the static registry to prevent ARC deallocation during callbacks
+        CallbackRouter.shared.register(self)
 
-        let opaque = Unmanaged.passUnretained(self).toOpaque()
+        let bridgeID = CallbackRouter.shared.id(for: self)
 
         ipscan_set_result_callback(handle, { jsonPtr, ctx in
-            guard let jsonPtr, let ctx else { return }
+            guard let jsonPtr else { return }
             let json = String(cString: jsonPtr)
-            let bridge = Unmanaged<IPScanBridge>.fromOpaque(ctx).takeUnretainedValue()
-            Task { @MainActor in
-                bridge.handleResult(json: json)
+            let idValue = unsafeBitCast(ctx, to: Int.self)
+            DispatchQueue.main.async {
+                CallbackRouter.shared.handleResult(bridgeID: idValue, json: json)
             }
-        }, opaque)
+        }, unsafeBitCast(bridgeID, to: UnsafeMutableRawPointer?.self))
 
         ipscan_set_progress_callback(handle, { jsonPtr, ctx in
-            guard let jsonPtr, let ctx else { return }
+            guard let jsonPtr else { return }
             let json = String(cString: jsonPtr)
-            let bridge = Unmanaged<IPScanBridge>.fromOpaque(ctx).takeUnretainedValue()
-            Task { @MainActor in
-                bridge.handleProgress(json: json)
+            let idValue = unsafeBitCast(ctx, to: Int.self)
+            DispatchQueue.main.async {
+                CallbackRouter.shared.handleProgress(bridgeID: idValue, json: json)
             }
-        }, opaque)
+        }, unsafeBitCast(bridgeID, to: UnsafeMutableRawPointer?.self))
     }
 
-    private func handleResult(json: String) {
+    fileprivate func handleResult(json: String) {
         guard let result = try? decoder.decode(ScanResult.self, from: Data(json.utf8)) else {
             return
         }
@@ -150,7 +142,7 @@ final class IPScanBridge {
         refreshStats()
     }
 
-    private func handleProgress(json: String) {
+    fileprivate func handleProgress(json: String) {
         guard let p = try? decoder.decode(ScanProgress.self, from: Data(json.utf8)) else {
             return
         }
@@ -159,9 +151,60 @@ final class IPScanBridge {
 
         if p.state == "idle" {
             refreshStats()
-            let id = ObjectIdentifier(self)
-            IPScanBridge.activeBridges.remove(id)
-            IPScanBridge.bridgeMap.removeValue(forKey: id)
+            CallbackRouter.shared.unregister(self)
+        }
+    }
+}
+
+// MARK: - Callback Router (non-isolated intermediary)
+
+/// Routes C callbacks from Go goroutines to the correct IPScanBridge instance
+/// on the main thread, avoiding Swift concurrency isolation issues.
+final class CallbackRouter: @unchecked Sendable {
+    static let shared = CallbackRouter()
+
+    private var bridges: [Int: IPScanBridge] = [:]
+    private var nextID = 1
+    private let lock = NSLock()
+
+    func register(_ bridge: IPScanBridge) {
+        lock.lock()
+        // Remove any existing entry for this bridge
+        bridges = bridges.filter { $0.value !== bridge }
+        bridges[nextID] = bridge
+        nextID += 1
+        lock.unlock()
+    }
+
+    func unregister(_ bridge: IPScanBridge) {
+        lock.lock()
+        bridges = bridges.filter { $0.value !== bridge }
+        lock.unlock()
+    }
+
+    func id(for bridge: IPScanBridge) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return bridges.first(where: { $0.value === bridge })?.key ?? 0
+    }
+
+    func handleResult(bridgeID: Int, json: String) {
+        lock.lock()
+        let bridge = bridges[bridgeID]
+        lock.unlock()
+        guard let bridge else { return }
+        MainActor.assumeIsolated {
+            bridge.handleResult(json: json)
+        }
+    }
+
+    func handleProgress(bridgeID: Int, json: String) {
+        lock.lock()
+        let bridge = bridges[bridgeID]
+        lock.unlock()
+        guard let bridge else { return }
+        MainActor.assumeIsolated {
+            bridge.handleProgress(json: json)
         }
     }
 }
