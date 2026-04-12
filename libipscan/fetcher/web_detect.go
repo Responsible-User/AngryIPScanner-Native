@@ -47,7 +47,7 @@ func (f *WebDetectFetcher) Scan(subject *scannerPkg.ScanningSubject) interface{}
 		line := sc.Text()
 		m := serverHeaderRegex.FindStringSubmatch(line)
 		if len(m) > 1 {
-			subject.ResultType = scannerPkg.ResultWithPorts
+			subject.UpgradeResultType(scannerPkg.ResultWithPorts)
 			return m[1]
 		}
 	}

@@ -35,14 +35,25 @@ struct StatusBarView: View {
                     .frame(width: 120)
             }
 
-            // Stats
+            // Stats always visible
             HStack(spacing: 8) {
-                Label("\(bridge.stats.alive)", systemImage: "circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.green)
-                Label("\(bridge.stats.total - bridge.stats.alive)", systemImage: "circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                HStack(spacing: 2) {
+                    Circle().fill(.green).frame(width: 6, height: 6)
+                    Text("\(bridge.stats.alive)")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                if bridge.stats.withPorts > 0 {
+                    HStack(spacing: 2) {
+                        Circle().fill(.blue).frame(width: 6, height: 6)
+                        Text("\(bridge.stats.withPorts)")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                HStack(spacing: 2) {
+                    Circle().fill(.red).frame(width: 6, height: 6)
+                    Text("\(bridge.stats.total - bridge.stats.alive)")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -60,7 +71,7 @@ struct StatusBarView: View {
             return "Starting..."
         default:
             if bridge.stats.total > 0 {
-                return "Scan complete: \(bridge.stats.total) hosts, \(bridge.stats.alive) alive"
+                return "Done: \(bridge.stats.total) scanned, \(bridge.stats.alive) alive, \(bridge.stats.withPorts) with ports"
             }
             return "Ready"
         }

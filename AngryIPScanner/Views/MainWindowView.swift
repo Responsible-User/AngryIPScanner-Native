@@ -43,24 +43,33 @@ struct MainWindowView: View {
     }
 
     private func autoDetectLocalRange() {
-        // Try to detect the local network range
-        // For now, use a sensible default
-        if startIP.isEmpty {
+        guard startIP.isEmpty else { return }
+
+        guard let info = getLocalInterfaceInfo() else {
             startIP = "192.168.1.1"
             endIP = "192.168.1.255"
-
-            // Try to get actual local interface
-            if let iface = getLocalIPv4() {
-                let parts = iface.split(separator: ".")
-                if parts.count == 4 {
-                    startIP = "\(parts[0]).\(parts[1]).\(parts[2]).1"
-                    endIP = "\(parts[0]).\(parts[1]).\(parts[2]).255"
-                }
-            }
+            return
         }
+
+        let ip = info.ip
+        let prefix = info.prefixLen
+
+        // Calculate CIDR range
+        let mask: UInt32 = prefix == 0 ? 0 : ~((1 << (32 - prefix)) - 1)
+        let ipNum = ipToUInt32(ip)
+        let networkStart = ipNum & mask
+        let networkEnd = networkStart | ~mask
+
+        startIP = uint32ToIP(networkStart + 1) // skip network address
+        endIP = uint32ToIP(networkEnd - 1)     // skip broadcast
     }
 
-    private func getLocalIPv4() -> String? {
+    private struct InterfaceInfo {
+        let ip: [UInt8]
+        let prefixLen: Int
+    }
+
+    private func getLocalInterfaceInfo() -> InterfaceInfo? {
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return nil }
         defer { freeifaddrs(first) }
@@ -71,16 +80,38 @@ struct MainWindowView: View {
             let name = String(cString: ptr.pointee.ifa_name)
             guard name.hasPrefix("en") else { continue }
 
+            // Get IP
             var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-            if getnameinfo(ptr.pointee.ifa_addr, socklen_t(addr.sa_len),
-                          &hostname, socklen_t(hostname.count),
-                          nil, 0, NI_NUMERICHOST) == 0 {
-                let ip = String(cString: hostname)
-                if !ip.hasPrefix("127.") {
-                    return ip
-                }
+            guard getnameinfo(ptr.pointee.ifa_addr, socklen_t(addr.sa_len),
+                             &hostname, socklen_t(hostname.count),
+                             nil, 0, NI_NUMERICHOST) == 0 else { continue }
+            let ipStr = String(cString: hostname)
+            if ipStr.hasPrefix("127.") { continue }
+
+            let parts = ipStr.split(separator: ".")
+            guard parts.count == 4 else { continue }
+            let bytes = parts.compactMap { UInt8($0) }
+            guard bytes.count == 4 else { continue }
+
+            // Get netmask to determine prefix length
+            if let netmask = ptr.pointee.ifa_netmask {
+                let maskAddr = netmask.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
+                let maskInt = UInt32(bigEndian: maskAddr.sin_addr.s_addr)
+                let prefix = maskInt.nonzeroBitCount
+
+                return InterfaceInfo(ip: bytes, prefixLen: prefix)
             }
+
+            return InterfaceInfo(ip: bytes, prefixLen: 24)
         }
         return nil
+    }
+
+    private func ipToUInt32(_ bytes: [UInt8]) -> UInt32 {
+        UInt32(bytes[0]) << 24 | UInt32(bytes[1]) << 16 | UInt32(bytes[2]) << 8 | UInt32(bytes[3])
+    }
+
+    private func uint32ToIP(_ n: UInt32) -> String {
+        "\(n >> 24 & 0xFF).\(n >> 16 & 0xFF).\(n >> 8 & 0xFF).\(n & 0xFF)"
     }
 }

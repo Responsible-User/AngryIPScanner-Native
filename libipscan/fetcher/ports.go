@@ -56,7 +56,7 @@ func (f *PortsFetcher) Scan(subject *scanner.ScanningSubject) interface{} {
 	}
 
 	if len(openPorts) > 0 {
-		subject.ResultType = scanner.ResultWithPorts
+		subject.UpgradeResultType(scanner.ResultWithPorts)
 		return formatPorts(openPorts)
 	}
 	_ = filteredPorts

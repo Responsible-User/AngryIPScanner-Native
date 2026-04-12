@@ -24,9 +24,9 @@ func (f *PacketLossFetcher) Cleanup()     {}
 func (f *PacketLossFetcher) Scan(subject *scanner.ScanningSubject) interface{} {
 	result := f.pingFetcher.ExecutePing(subject)
 	if result.IsAlive() {
-		subject.ResultType = scanner.ResultAlive
+		subject.UpgradeResultType(scanner.ResultAlive)
 	} else {
-		subject.ResultType = scanner.ResultDead
+		subject.UpgradeResultType(scanner.ResultDead)
 	}
 	return formatPacketLoss(result)
 }

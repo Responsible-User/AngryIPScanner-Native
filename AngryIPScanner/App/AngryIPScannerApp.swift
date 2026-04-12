@@ -4,14 +4,19 @@ import SwiftUI
 struct AngryIPScannerApp: App {
     @State private var bridge = IPScanBridge()
     @State private var showAbout = false
-    @State private var showStatistics = false
     @State private var showSelectFetchers = false
 
     var body: some Scene {
         WindowGroup {
             MainWindowView(bridge: bridge)
-                .sheet(isPresented: $showAbout) { AboutView() }
-                .sheet(isPresented: $showStatistics) { StatisticsView(stats: bridge.stats) }
+                .sheet(isPresented: $showAbout) {
+                    AboutView()
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("OK") { showAbout = false }
+                            }
+                        }
+                }
                 .sheet(isPresented: $showSelectFetchers) { SelectFetchersView(bridge: bridge) }
         }
         .defaultSize(width: 900, height: 500)
@@ -46,7 +51,7 @@ struct AngryIPScannerApp: App {
                 .keyboardShortcut("c", modifiers: [.command, .option])
             }
 
-            // View menu: display filtering + fetcher selection
+            // View menu
             CommandMenu("View") {
                 Button("Select Fetchers...") {
                     showSelectFetchers = true
@@ -83,25 +88,6 @@ struct AngryIPScannerApp: App {
                         Text("Show With Ports Only")
                     }
                 }
-            }
-
-            // Scan menu
-            CommandMenu("Scan") {
-                Button(bridge.scanState == "scanning" ? "Stop Scanning" : "Start Scanning") {
-                    if bridge.scanState == "scanning" || bridge.scanState == "starting" {
-                        bridge.stopScan()
-                    }
-                }
-                .keyboardShortcut(.return, modifiers: .command)
-                .disabled(bridge.scanState == "idle")
-
-                Divider()
-
-                Button("Show Statistics") {
-                    showStatistics = true
-                }
-                .keyboardShortcut("t", modifiers: .command)
-                .disabled(bridge.stats.total == 0)
             }
 
             // Go To menu
@@ -167,7 +153,7 @@ struct AngryIPScannerApp: App {
     }
 }
 
-// MARK: - Notification names for menu → view communication
+// MARK: - Notification names for menu -> view communication
 
 extension Notification.Name {
     static let copyIP = Notification.Name("copyIP")

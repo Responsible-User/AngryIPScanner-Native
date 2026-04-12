@@ -67,9 +67,9 @@ func (f *PingFetcher) Scan(subject *scanner.ScanningSubject) interface{} {
 	result := f.ExecutePing(subject)
 
 	if result.IsAlive() {
-		subject.ResultType = scanner.ResultAlive
+		subject.UpgradeResultType(scanner.ResultAlive)
 	} else {
-		subject.ResultType = scanner.ResultDead
+		subject.UpgradeResultType(scanner.ResultDead)
 	}
 
 	if !result.IsAlive() && !f.scanDeadHosts {
