@@ -5,3 +5,5 @@
 /build
 /lib/*src.zip
 .DS_Store
+.claude/settings.json
+.claude/plans/

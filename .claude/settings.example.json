@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find <project-root> -maxdepth 1 -type f \\\\\\( -name \"*.md\" -o -name \"LICENSE*\" \\\\\\) -exec basename {} \\\\;)",
+      "Bash(go mod:*)"
+    ]
+  }
+}
