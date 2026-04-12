@@ -59,10 +59,12 @@ func TestEngineScansAllIPs(t *testing.T) {
 	var mu sync.Mutex
 	var resultIPs []string
 	engine.SetCallbacks(
-		func(result *ScanningResult) {
-			mu.Lock()
-			resultIPs = append(resultIPs, result.Address.String())
-			mu.Unlock()
+		func(result *ScanningResult, complete bool) {
+			if complete {
+				mu.Lock()
+				resultIPs = append(resultIPs, result.Address.String())
+				mu.Unlock()
+			}
 		},
 		nil,
 	)

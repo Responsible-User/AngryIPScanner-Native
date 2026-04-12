@@ -4,9 +4,10 @@ import Foundation
 struct ScanResult: Identifiable, Codable {
     let id: UUID
     let ip: String
-    let type: ResultType
-    let values: [AnyCodableValue]
-    let mac: String?
+    var type: ResultType
+    var values: [AnyCodableValue]
+    var mac: String?
+    var complete: Bool
 
     enum ResultType: String, Codable {
         case unknown
@@ -16,7 +17,7 @@ struct ScanResult: Identifiable, Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case ip, type, values, mac
+        case ip, type, values, mac, complete
     }
 
     init(from decoder: Decoder) throws {
@@ -26,14 +27,16 @@ struct ScanResult: Identifiable, Codable {
         self.type = try container.decode(ResultType.self, forKey: .type)
         self.values = try container.decodeIfPresent([AnyCodableValue].self, forKey: .values) ?? []
         self.mac = try container.decodeIfPresent(String.self, forKey: .mac)
+        self.complete = try container.decodeIfPresent(Bool.self, forKey: .complete) ?? false
     }
 
-    init(ip: String, type: ResultType, values: [AnyCodableValue], mac: String? = nil) {
+    init(ip: String, type: ResultType, values: [AnyCodableValue], mac: String? = nil, complete: Bool = false) {
         self.id = UUID()
         self.ip = ip
         self.type = type
         self.values = values
         self.mac = mac
+        self.complete = complete
     }
 }
 

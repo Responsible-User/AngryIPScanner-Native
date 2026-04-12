@@ -241,13 +241,14 @@ func ipscan_start_scan(handle C.int, feederJSON *C.char) C.int {
 
 	// Set up callbacks
 	inst.engine.SetCallbacks(
-		func(result *scanner.ScanningResult) {
+		func(result *scanner.ScanningResult, complete bool) {
 			if inst.resultCb != nil {
 				j, _ := json.Marshal(map[string]interface{}{
-					"ip":     result.Address.String(),
-					"type":   resultTypeString(result.Type),
-					"values": result.Values,
-					"mac":    result.MAC,
+					"ip":       result.Address.String(),
+					"type":     resultTypeString(result.Type),
+					"values":   result.Values,
+					"mac":      result.MAC,
+					"complete": complete,
 				})
 				cstr := C.CString(string(j))
 				C.call_result_cb(inst.resultCb, cstr, inst.resultCtx)

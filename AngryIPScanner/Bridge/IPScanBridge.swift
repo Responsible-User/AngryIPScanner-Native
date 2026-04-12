@@ -29,12 +29,31 @@ private func progressCallbackFunc(_ jsonPtr: UnsafePointer<CChar>?, _ ctx: Unsaf
 final class IPScanBridge {
     nonisolated(unsafe) private var handle: Int32 = 0
 
+    enum DisplayFilter: String, CaseIterable {
+        case all = "All"
+        case alive = "Alive"
+        case withPorts = "With Ports"
+    }
+
     // Observable state
     var results: [ScanResult] = []
     var progress: ScanProgress?
     var scanState: String = "idle"
     var stats: ScanStats = ScanStats(total: 0, alive: 0, withPorts: 0)
     var availableFetchers: [FetcherInfo] = []
+    var displayFilter: DisplayFilter = .all
+
+    /// Results filtered by the current display mode.
+    var filteredResults: [ScanResult] {
+        switch displayFilter {
+        case .all:
+            return results
+        case .alive:
+            return results.filter { $0.type == .alive || $0.type == .withPorts }
+        case .withPorts:
+            return results.filter { $0.type == .withPorts }
+        }
+    }
 
     private let decoder = JSONDecoder()
 
@@ -152,8 +171,23 @@ final class IPScanBridge {
         guard let result = try? decoder.decode(ScanResult.self, from: Data(json.utf8)) else {
             return
         }
-        results.append(result)
-        refreshStats()
+
+        if result.complete {
+            // Update existing row in-place
+            if let idx = results.firstIndex(where: { $0.ip == result.ip }) {
+                results[idx].type = result.type
+                results[idx].values = result.values
+                results[idx].mac = result.mac
+                results[idx].complete = true
+            } else {
+                // Shouldn't happen, but append as fallback
+                results.append(result)
+            }
+            refreshStats()
+        } else {
+            // First callback — add the row immediately (unknown/scanning)
+            results.append(result)
+        }
     }
 
     fileprivate func handleProgress(json: String) {

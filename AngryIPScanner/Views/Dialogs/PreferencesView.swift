@@ -88,6 +88,15 @@ struct ScanningPrefsTab: View {
 
 // MARK: - Ports Tab
 
+private let commonPortSets: [(name: String, ports: String)] = [
+    ("Web (80, 443, 8080, 8443)", "80,443,8080,8443"),
+    ("Remote Access (22, 23, 3389, 5900)", "22,23,3389,5900"),
+    ("Mail (25, 110, 143, 993, 995)", "25,110,143,993,995"),
+    ("Database (3306, 5432, 6379, 27017)", "3306,5432,6379,27017"),
+    ("File Sharing (21, 445, 139, 548)", "21,445,139,548"),
+    ("DNS + DHCP (53, 67, 68)", "53,67,68"),
+]
+
 struct PortsPrefsTab: View {
     @Binding var config: ScanConfig
 
@@ -110,16 +119,66 @@ struct PortsPrefsTab: View {
             }
 
             Section("Port Selection") {
-                Text("Enter ports separated by commas, or ranges with dashes (e.g. 80,443,8080-8090):")
+                Text("Ports to scan (comma-separated, ranges with dashes):")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 TextEditor(text: $config.scanner.portString)
                     .font(.system(.body, design: .monospaced))
                     .frame(height: 60)
                     .border(Color.secondary.opacity(0.3))
+
+                HStack {
+                    Menu("Add Common Ports") {
+                        ForEach(commonPortSets, id: \.name) { preset in
+                            Button(preset.name) {
+                                addPorts(preset.ports)
+                            }
+                        }
+                        Divider()
+                        Button("All Common Ports") {
+                            for preset in commonPortSets {
+                                addPorts(preset.ports)
+                            }
+                        }
+                    }
+
+                    Button("Reset to Default") {
+                        config.scanner.portString = "22,80,443"
+                    }
+                }
+
                 Toggle("Add requested ports from file feeder", isOn: $config.scanner.useRequestedPorts)
             }
         }
+    }
+
+    private func addPorts(_ ports: String) {
+        let existing = config.scanner.portString.trimmingCharacters(in: .whitespaces)
+        if existing.isEmpty {
+            config.scanner.portString = ports
+        } else {
+            // Merge without duplicates
+            var current = parsePortSet(existing)
+            let new = parsePortSet(ports)
+            current.formUnion(new)
+            config.scanner.portString = current.sorted().map(String.init).joined(separator: ",")
+        }
+    }
+
+    private func parsePortSet(_ s: String) -> Set<Int> {
+        var result = Set<Int>()
+        for part in s.split(whereSeparator: { ",; \t\n\r".contains($0) }) {
+            let trimmed = part.trimmingCharacters(in: .whitespaces)
+            if let dash = trimmed.firstIndex(of: "-"), dash != trimmed.startIndex {
+                if let a = Int(trimmed[..<dash]), let b = Int(trimmed[trimmed.index(after: dash)...]),
+                   a > 0, b > 0 {
+                    for p in a...b { result.insert(p) }
+                }
+            } else if let p = Int(trimmed), p > 0 {
+                result.insert(p)
+            }
+        }
+        return result
     }
 }
 

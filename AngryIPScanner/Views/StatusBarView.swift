@@ -13,10 +13,14 @@ struct StatusBarView: View {
 
             Spacer()
 
-            // Display mode
-            Text(displayModeText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            // Display filter picker
+            Picker("", selection: $bridge.displayFilter) {
+                ForEach(IPScanBridge.DisplayFilter.allCases, id: \.self) { filter in
+                    Text(filter.rawValue).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 200)
 
             // Thread count
             if bridge.scanState == "scanning", let p = bridge.progress {
@@ -60,10 +64,6 @@ struct StatusBarView: View {
             }
             return "Ready"
         }
-    }
-
-    private var displayModeText: String {
-        return "Showing all"
     }
 
     private var progressValue: Double {

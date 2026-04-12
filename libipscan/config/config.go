@@ -39,7 +39,7 @@ func DefaultScannerConfig() *ScannerConfig {
 		PortTimeout:        2000,
 		AdaptPortTimeout:   true,
 		MinPortTimeout:     100,
-		PortString:         "80,443,8080",
+		PortString:         "22,80,443",
 		UseRequestedPorts:  true,
 		NotAvailableText:   "[n/a]",
 		NotScannedText:     "[n/s]",

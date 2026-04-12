@@ -36,8 +36,10 @@ type ScanProgress struct {
 	State         string  `json:"state"`
 }
 
-// ResultCallback is called for each completed scan result.
-type ResultCallback func(result *ScanningResult)
+// ResultCallback is called for each scan result.
+// Called twice per IP: once when scanning starts (type=unknown, empty values),
+// and again when scanning completes (type=alive/dead/with_ports, filled values).
+type ResultCallback func(result *ScanningResult, complete bool)
 
 // ProgressCallback is called periodically with progress updates.
 type ProgressCallback func(progress ScanProgress)
@@ -173,6 +175,12 @@ func (e *Engine) runScan(ctx context.Context, feeder Feeder, cfg EngineConfig) {
 		}
 
 		result := NewScanningResult(subject.Address, len(e.fetchers))
+
+		// Send result immediately so UI shows the row (type=unknown)
+		if e.onResult != nil {
+			e.onResult(result, false)
+		}
+
 		wg.Add(1)
 
 		go func(subj *ScanningSubject, res *ScanningResult) {
@@ -187,7 +195,7 @@ func (e *Engine) runScan(ctx context.Context, feeder Feeder, cfg EngineConfig) {
 
 			e.results.Add(res)
 			if e.onResult != nil {
-				e.onResult(res)
+				e.onResult(res, true)
 			}
 		}(subject, result)
 

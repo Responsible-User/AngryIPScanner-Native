@@ -20,41 +20,41 @@ struct ResultTableView: View {
             }
             .width(min: 120, ideal: 140)
 
-            TableColumn("Ping") { result in
+            TableColumn("Ping", value: \.pingSort) { result in
                 Text(valueAt(index: 1, in: result))
                     .font(.system(.body, design: .monospaced))
             }
             .width(min: 50, ideal: 70)
 
-            TableColumn("TTL") { result in
+            TableColumn("TTL", value: \.ttlSort) { result in
                 Text(valueAt(index: 2, in: result))
                     .font(.system(.body, design: .monospaced))
             }
             .width(min: 35, ideal: 50)
 
-            TableColumn("Hostname") { result in
+            TableColumn("Hostname", value: \.hostnameSort) { result in
                 Text(valueAt(index: 3, in: result))
             }
             .width(min: 100, ideal: 180)
 
-            TableColumn("Ports") { result in
+            TableColumn("Ports", value: \.portsSort) { result in
                 Text(valueAt(index: 4, in: result))
                     .font(.system(.body, design: .monospaced))
             }
             .width(min: 60, ideal: 100)
 
-            TableColumn("MAC Address") { result in
+            TableColumn("MAC Address", value: \.macSort) { result in
                 Text(valueAt(index: 6, in: result))
                     .font(.system(.body, design: .monospaced))
             }
             .width(min: 100, ideal: 140)
 
-            TableColumn("MAC Vendor") { result in
+            TableColumn("MAC Vendor", value: \.vendorSort) { result in
                 Text(valueAt(index: 7, in: result))
             }
             .width(min: 80, ideal: 120)
 
-            TableColumn("Web detect") { result in
+            TableColumn("Web detect", value: \.webSort) { result in
                 Text(valueAt(index: 8, in: result))
             }
             .width(min: 80, ideal: 120)
@@ -63,22 +63,25 @@ struct ResultTableView: View {
                 TableRow(result)
                     .contextMenu {
                         Button("Copy IP") {
-                            NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(result.ip, forType: .string)
+                            copyToClipboard(result.ip)
                         }
-                        Button("Copy All") {
+                        Button("Copy All Columns") {
                             let text = result.values.map(\.description).joined(separator: "\t")
-                            NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(text, forType: .string)
+                            copyToClipboard(text)
                         }
                     }
             }
         }
-        .onChange(of: sortOrder) { _, _ in }
+        .onReceive(NotificationCenter.default.publisher(for: .copyIP)) { _ in
+            copySelectedIPs()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .copyAll)) { _ in
+            copySelectedAll()
+        }
     }
 
     private var sortedResults: [ScanResult] {
-        bridge.results.sorted(using: sortOrder)
+        bridge.filteredResults.sorted(using: sortOrder)
     }
 
     private func valueAt(index: Int, in result: ScanResult) -> String {
@@ -93,5 +96,43 @@ struct ResultTableView: View {
         case .dead: return .red
         case .unknown: return .gray
         }
+    }
+
+    private func copyToClipboard(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    private func copySelectedIPs() {
+        let ips = bridge.filteredResults
+            .filter { selectedResults.contains($0.id) }
+            .map(\.ip)
+            .joined(separator: "\n")
+        if !ips.isEmpty { copyToClipboard(ips) }
+    }
+
+    private func copySelectedAll() {
+        let lines = bridge.filteredResults
+            .filter { selectedResults.contains($0.id) }
+            .map { $0.values.map(\.description).joined(separator: "\t") }
+            .joined(separator: "\n")
+        if !lines.isEmpty { copyToClipboard(lines) }
+    }
+}
+
+// MARK: - Sortable key paths for all columns
+
+extension ScanResult {
+    var pingSort: String { valueAt(1) }
+    var ttlSort: String { valueAt(2) }
+    var hostnameSort: String { valueAt(3) }
+    var portsSort: String { valueAt(4) }
+    var macSort: String { valueAt(6) }
+    var vendorSort: String { valueAt(7) }
+    var webSort: String { valueAt(8) }
+
+    private func valueAt(_ index: Int) -> String {
+        guard index < values.count else { return "" }
+        return values[index].description
     }
 }
