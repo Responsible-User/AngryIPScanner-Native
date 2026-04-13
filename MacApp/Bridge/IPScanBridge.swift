@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 // MARK: - Free C callback functions (must be at file scope, completely nonisolated)
 
@@ -58,6 +59,15 @@ final class IPScanBridge {
     private let decoder = JSONDecoder()
 
     init() {
+        // Tell Go where to store config — uses Apple's recommended directory,
+        // which resolves to the sandbox container if sandboxed.
+        if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let configDir = appSupport.appendingPathComponent("AngryIPScanner").path
+            let dirStr = strdup(configDir)
+            ipscan_set_config_dir(dirStr)
+            free(dirStr)
+        }
+
         handle = ipscan_new(nil)
         loadAvailableFetchers()
     }
@@ -98,6 +108,33 @@ final class IPScanBridge {
         scanState = "scanning"
     }
 
+    func startFileScan(filePath: String) {
+        results.removeAll()
+        stats = ScanStats(total: 0, alive: 0, withPorts: 0)
+
+        let feederConfig = FeederConfig(type: "file", startIP: nil, endIP: nil, filePath: filePath)
+        guard let json = try? JSONEncoder().encode(feederConfig),
+              let jsonStr = String(data: json, encoding: .utf8) else {
+            return
+        }
+
+        CallbackRouter.shared.register(self)
+        let bridgeID = CallbackRouter.shared.id(for: self)
+        let ctxPtr = UnsafeMutableRawPointer(bitPattern: bridgeID)
+
+        ipscan_set_result_callback(handle, resultCallbackFunc, ctxPtr)
+        ipscan_set_progress_callback(handle, progressCallbackFunc, ctxPtr)
+
+        let mutableStr = strdup(jsonStr)
+        let result = ipscan_start_scan(handle, mutableStr)
+        free(mutableStr)
+        if result != 0 {
+            print("Failed to start file scan: error \(result)")
+        }
+
+        scanState = "scanning"
+    }
+
     func stopScan() {
         ipscan_stop_scan(handle)
         scanState = "stopping"
@@ -118,6 +155,100 @@ final class IPScanBridge {
         let mutable = strdup(json)
         ipscan_set_config(handle, mutable)
         free(mutable)
+    }
+
+    // MARK: - Comments
+
+    func setComment(ip: String, comment: String) {
+        let ipStr = strdup(ip)
+        let commentStr = strdup(comment)
+        ipscan_set_comment(handle, ipStr, commentStr)
+        free(ipStr)
+        free(commentStr)
+    }
+
+    func getComment(ip: String) -> String {
+        let ipStr = strdup(ip)
+        guard let ptr = ipscan_get_comment(handle, ipStr) else {
+            free(ipStr)
+            return ""
+        }
+        free(ipStr)
+        defer { ipscan_free_string(ptr) }
+        return String(cString: ptr)
+    }
+
+    // MARK: - Result Operations
+
+    func deleteResult(ip: String) {
+        let ipStr = strdup(ip)
+        ipscan_delete_result(handle, ipStr)
+        free(ipStr)
+        results.removeAll { $0.ip == ip }
+        refreshStats()
+    }
+
+    // MARK: - Favorites
+
+    func saveFavorite(name: String, startIP: String, endIP: String) {
+        let nameStr = strdup(name)
+        let args = strdup("\(startIP) - \(endIP)")
+        ipscan_save_favorite(handle, nameStr, args)
+        free(nameStr)
+        free(args)
+    }
+
+    func getFavorites() -> [FavoriteEntry] {
+        guard let ptr = ipscan_get_favorites(handle) else { return [] }
+        defer { ipscan_free_string(ptr) }
+        let json = String(cString: ptr)
+        return (try? decoder.decode([FavoriteEntry].self, from: Data(json.utf8))) ?? []
+    }
+
+    func deleteFavorite(index: Int) {
+        ipscan_delete_favorite(handle, Int32(index))
+    }
+
+    // MARK: - Export (filtered)
+
+    func exportFiltered(format: String, to url: URL, filter: String) -> Bool {
+        let formatStr = strdup(format)
+        let pathStr = strdup(url.path)
+        let filterStr = strdup(filter)
+        let result = ipscan_export_filtered(handle, formatStr, pathStr, filterStr)
+        free(formatStr)
+        free(pathStr)
+        free(filterStr)
+        return result == 0
+    }
+
+    // MARK: - Openers
+
+    func openInBrowser(ip: String) {
+        if let url = URL(string: "http://\(ip)") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func openSSH(ip: String) {
+        let script = "tell application \"Terminal\" to do script \"ssh \(ip)\""
+        if let appleScript = NSAppleScript(source: script) {
+            appleScript.executeAndReturnError(nil)
+        }
+    }
+
+    func openPing(ip: String) {
+        let script = "tell application \"Terminal\" to do script \"ping \(ip)\""
+        if let appleScript = NSAppleScript(source: script) {
+            appleScript.executeAndReturnError(nil)
+        }
+    }
+
+    func openTraceroute(ip: String) {
+        let script = "tell application \"Terminal\" to do script \"traceroute \(ip)\""
+        if let appleScript = NSAppleScript(source: script) {
+            appleScript.executeAndReturnError(nil)
+        }
     }
 
     // MARK: - Results

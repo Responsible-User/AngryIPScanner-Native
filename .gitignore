@@ -7,8 +7,11 @@
 .DS_Store
 .claude/settings.json
 .claude/plans/
-AngryIPScanner/Bridge/libipscan.dylib
-AngryIPScanner/Bridge/libipscan.h
-AngryIPScanner/AngryIPScanner.xcodeproj/
+MacApp/Bridge/libipscan.dylib
+MacApp/Bridge/libipscan.h
+MacApp/AngryIPScanner.xcodeproj/
 .vscode/
+/.idea/
 /legacy
+TODO.md
+commit_msg.txt
