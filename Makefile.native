@@ -1,9 +1,11 @@
-# Build the native Go + Swift app
-.PHONY: all go swift clean test
+# Build the native Go + platform UI apps
+.PHONY: all go swift clean test go-windows windows
 
 all: go swift
 
-# Build the Go shared library
+# ── macOS ──────────────────────────────────────────────────
+
+# Build the Go shared library (macOS)
 go:
 	cd libipscan && go build -buildmode=c-shared -o ../AngryIPScanner/Bridge/libipscan.dylib
 	install_name_tool -id "@rpath/libipscan.dylib" AngryIPScanner/Bridge/libipscan.dylib
@@ -12,6 +14,19 @@ go:
 swift: go
 	cd AngryIPScanner && xcodebuild -scheme AngryIPScanner -configuration Debug build
 
+# ── Windows ────────────────────────────────────────────────
+
+# Build the Go shared library for Windows (run on Windows with CGO)
+# Set GOARCH=arm64 or GOARCH=amd64 before invoking to cross-compile
+go-windows:
+	cd libipscan && GOOS=windows CGO_ENABLED=1 go build -buildmode=c-shared -o ../WindowsApp/AngryIPScanner/libipscan.dll
+
+# Build the full Windows app (Go DLL + WPF)
+windows: go-windows
+	cd WindowsApp && dotnet build AngryIPScanner/AngryIPScanner.csproj -c Release
+
+# ── Shared ─────────────────────────────────────────────────
+
 # Run all Go tests
 test:
 	cd libipscan && go test ./... -v
@@ -19,7 +34,9 @@ test:
 # Clean build artifacts
 clean:
 	rm -f AngryIPScanner/Bridge/libipscan.dylib AngryIPScanner/Bridge/libipscan.h
+	rm -f WindowsApp/AngryIPScanner/libipscan.dll WindowsApp/AngryIPScanner/libipscan.h
 	cd AngryIPScanner && xcodebuild clean 2>/dev/null || true
+	cd WindowsApp && dotnet clean 2>/dev/null || true
 
 # Regenerate Xcode project from project.yml (requires xcodegen)
 xcode:

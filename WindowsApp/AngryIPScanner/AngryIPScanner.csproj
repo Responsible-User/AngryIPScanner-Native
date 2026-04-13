@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AngryIPScanner</RootNamespace>
+    <AssemblyName>AngryIPScanner</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Copy Go DLL to output -->
+  <ItemGroup>
+    <Content Include="libipscan.dll" Condition="Exists('libipscan.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>
