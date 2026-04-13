@@ -13,22 +13,25 @@ struct DetailsView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
 
-            // Fetcher results grid
+            // Fetcher results as a two-column list
             ScrollView {
-                Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 6) {
-                    ForEach(Array(zip(bridge.availableFetchers, result.values).enumerated()), id: \.offset) { _, pair in
-                        GridRow {
-                            Text(pair.0.name + ":")
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(resultPairs.enumerated()), id: \.offset) { _, pair in
+                        HStack(alignment: .top) {
+                            Text(pair.label + ":")
                                 .foregroundStyle(.secondary)
                                 .fontWeight(.medium)
-                            Text(pair.1.description)
+                                .frame(width: 120, alignment: .trailing)
+                            Text(pair.value)
                                 .textSelection(.enabled)
                                 .font(.system(.body, design: .monospaced))
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
+                .padding(.horizontal, 4)
             }
-            .frame(maxHeight: 300)
 
             Divider()
 
@@ -51,9 +54,22 @@ struct DetailsView: View {
             }
         }
         .padding(20)
-        .frame(width: 450, height: 400)
+        .frame(width: 500, height: 450)
         .onAppear {
             comment = bridge.getComment(ip: result.ip)
         }
+    }
+
+    private var resultPairs: [(label: String, value: String)] {
+        let fetchers = bridge.availableFetchers
+        var pairs: [(label: String, value: String)] = []
+        for i in 0..<max(fetchers.count, result.values.count) {
+            let label = i < fetchers.count ? fetchers[i].name : "Column \(i)"
+            let value = i < result.values.count ? result.values[i].description : ""
+            if !value.isEmpty {
+                pairs.append((label: label, value: value))
+            }
+        }
+        return pairs
     }
 }
