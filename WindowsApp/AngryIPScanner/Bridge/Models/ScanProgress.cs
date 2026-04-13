@@ -4,13 +4,13 @@ namespace AngryIPScanner.Bridge.Models;
 
 public class ScanProgress
 {
-    [JsonPropertyName("currentIP")]
+    [JsonPropertyName("current_ip")]
     public string CurrentIP { get; set; } = "";
 
     [JsonPropertyName("percent")]
     public double Percent { get; set; }
 
-    [JsonPropertyName("activeThreads")]
+    [JsonPropertyName("active_threads")]
     public int ActiveThreads { get; set; }
 
     [JsonPropertyName("state")]

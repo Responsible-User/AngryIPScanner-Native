@@ -77,7 +77,10 @@ func isPortUnreachable(err error) bool {
 		return false
 	}
 	msg := err.Error()
-	return strings.Contains(msg, "connection refused")
+	// Unix:    "connection refused"
+	// Windows: "actively refused" or "forcibly closed"
+	return strings.Contains(msg, "refused") ||
+		strings.Contains(msg, "forcibly closed")
 }
 
 func isHostDown(err error) bool {
@@ -85,6 +88,8 @@ func isHostDown(err error) bool {
 		return false
 	}
 	msg := err.Error()
+	// Unix:    "route to host", "unreachable", "down"
+	// Windows: "unreachable", "network is unreachable"
 	return strings.Contains(msg, "route to host") ||
 		strings.Contains(msg, "unreachable") ||
 		strings.Contains(msg, "down")
