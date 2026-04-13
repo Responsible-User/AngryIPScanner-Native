@@ -2,12 +2,11 @@ import SwiftUI
 
 @main
 struct AngryIPScannerApp: App {
-    @State private var bridge = IPScanBridge()
     @State private var showAbout = false
 
     var body: some Scene {
         WindowGroup {
-            MainWindowView(bridge: bridge)
+            IndependentScanWindow()
                 .sheet(isPresented: $showAbout) {
                     AboutView()
                         .toolbar {
@@ -25,7 +24,6 @@ struct AngryIPScannerApp: App {
                     NotificationCenter.default.post(name: .exportResults, object: nil)
                 }
                 .keyboardShortcut("s", modifiers: [.command, .shift])
-                .disabled(bridge.stats.total == 0)
             }
 
             // About (app menu)
@@ -66,34 +64,14 @@ struct AngryIPScannerApp: App {
 
                 Divider()
 
-                Button {
-                    bridge.displayFilter = .all
-                } label: {
-                    if bridge.displayFilter == .all {
-                        Label("Show All Hosts", systemImage: "checkmark")
-                    } else {
-                        Text("Show All Hosts")
-                    }
+                Button("Show All Hosts") {
+                    NotificationCenter.default.post(name: .setFilterAll, object: nil)
                 }
-
-                Button {
-                    bridge.displayFilter = .alive
-                } label: {
-                    if bridge.displayFilter == .alive {
-                        Label("Show Alive Only", systemImage: "checkmark")
-                    } else {
-                        Text("Show Alive Only")
-                    }
+                Button("Show Alive Only") {
+                    NotificationCenter.default.post(name: .setFilterAlive, object: nil)
                 }
-
-                Button {
-                    bridge.displayFilter = .withPorts
-                } label: {
-                    if bridge.displayFilter == .withPorts {
-                        Label("Show With Ports Only", systemImage: "checkmark")
-                    } else {
-                        Text("Show With Ports Only")
-                    }
+                Button("Show With Ports Only") {
+                    NotificationCenter.default.post(name: .setFilterWithPorts, object: nil)
                 }
             }
 
@@ -122,8 +100,26 @@ struct AngryIPScannerApp: App {
         }
 
         Settings {
-            PreferencesView(bridge: bridge)
+            PreferencesView(bridge: IPScanBridge())
         }
+    }
+}
+
+/// Each window gets its own independent IPScanBridge instance.
+struct IndependentScanWindow: View {
+    @State private var bridge = IPScanBridge()
+
+    var body: some View {
+        MainWindowView(bridge: bridge)
+            .onReceive(NotificationCenter.default.publisher(for: .setFilterAll)) { _ in
+                bridge.displayFilter = .all
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .setFilterAlive)) { _ in
+                bridge.displayFilter = .alive
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .setFilterWithPorts)) { _ in
+                bridge.displayFilter = .withPorts
+            }
     }
 }
 
@@ -140,4 +136,7 @@ extension Notification.Name {
     static let showManageFavorites = Notification.Name("showManageFavorites")
     static let showSelectFetchers = Notification.Name("showSelectFetchers")
     static let exportResults = Notification.Name("exportResults")
+    static let setFilterAll = Notification.Name("setFilterAll")
+    static let setFilterAlive = Notification.Name("setFilterAlive")
+    static let setFilterWithPorts = Notification.Name("setFilterWithPorts")
 }
