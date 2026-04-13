@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MainWindowView: View {
     @Bindable var bridge: IPScanBridge
@@ -249,10 +250,14 @@ import ObjectiveC
 class ExportFormatHelper: NSObject {
     weak var panel: NSSavePanel?
     let extensions: [String]
+    let contentTypes: [UTType]
 
     init(panel: NSSavePanel, extensions: [String]) {
         self.panel = panel
         self.extensions = extensions
+        self.contentTypes = extensions.map { ext in
+            UTType(filenameExtension: ext) ?? .plainText
+        }
     }
 
     @objc func formatChanged(_ sender: NSPopUpButton) {
@@ -262,6 +267,7 @@ class ExportFormatHelper: NSObject {
         let newExt = extensions[idx]
         let currentName = panel.nameFieldStringValue
         let stem = (currentName as NSString).deletingPathExtension
+        panel.allowedContentTypes = [contentTypes[idx]]
         panel.nameFieldStringValue = "\(stem).\(newExt)"
     }
 }
