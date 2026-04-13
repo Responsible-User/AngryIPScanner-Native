@@ -121,6 +121,11 @@ struct MainWindowView: View {
         let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 200, height: 24), pullsDown: false)
         popup.addItems(withTitles: formatLabels)
 
+        let helper = ExportFormatHelper(panel: panel, extensions: extensions)
+        popup.target = helper
+        popup.action = #selector(ExportFormatHelper.formatChanged(_:))
+        objc_setAssociatedObject(panel, "formatHelper", helper, .OBJC_ASSOCIATION_RETAIN)
+
         let accessory = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 32))
         let label = NSTextField(labelWithString: "Format:")
         label.frame = NSRect(x: 0, y: 4, width: 55, height: 24)
@@ -235,4 +240,28 @@ struct MainWindowView: View {
 
 extension Notification.Name {
     static let findNext = Notification.Name("findNext")
+}
+
+// MARK: - Export format helper
+
+import ObjectiveC
+
+class ExportFormatHelper: NSObject {
+    weak var panel: NSSavePanel?
+    let extensions: [String]
+
+    init(panel: NSSavePanel, extensions: [String]) {
+        self.panel = panel
+        self.extensions = extensions
+    }
+
+    @objc func formatChanged(_ sender: NSPopUpButton) {
+        guard let panel else { return }
+        let idx = sender.indexOfSelectedItem
+        guard idx >= 0, idx < extensions.count else { return }
+        let newExt = extensions[idx]
+        let currentName = panel.nameFieldStringValue
+        let stem = (currentName as NSString).deletingPathExtension
+        panel.nameFieldStringValue = "\(stem).\(newExt)"
+    }
 }
