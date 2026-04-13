@@ -7,12 +7,12 @@ all: go swift
 
 # Build the Go shared library (macOS)
 go:
-	cd libipscan && go build -buildmode=c-shared -o ../AngryIPScanner/Bridge/libipscan.dylib
-	install_name_tool -id "@rpath/libipscan.dylib" AngryIPScanner/Bridge/libipscan.dylib
+	cd libipscan && go build -buildmode=c-shared -o ../MacApp/Bridge/libipscan.dylib
+	install_name_tool -id "@rpath/libipscan.dylib" MacApp/Bridge/libipscan.dylib
 
 # Build the Swift app (requires go target first)
 swift: go
-	cd AngryIPScanner && xcodebuild -scheme AngryIPScanner -configuration Debug build
+	cd MacApp && xcodebuild -scheme AngryIPScanner -configuration Debug build
 
 # ── Windows ────────────────────────────────────────────────
 
@@ -33,11 +33,11 @@ test:
 
 # Clean build artifacts
 clean:
-	rm -f AngryIPScanner/Bridge/libipscan.dylib AngryIPScanner/Bridge/libipscan.h
+	rm -f MacApp/Bridge/libipscan.dylib MacApp/Bridge/libipscan.h
 	rm -f WindowsApp/AngryIPScanner/libipscan.dll WindowsApp/AngryIPScanner/libipscan.h
-	cd AngryIPScanner && xcodebuild clean 2>/dev/null || true
+	cd MacApp && xcodebuild clean 2>/dev/null || true
 	cd WindowsApp && dotnet clean 2>/dev/null || true
 
 # Regenerate Xcode project from project.yml (requires xcodegen)
 xcode:
-	cd AngryIPScanner && xcodegen generate
+	cd MacApp && xcodegen generate
