@@ -51,6 +51,11 @@ var (
 	nextID     = 1
 )
 
+//export ipscan_set_config_dir
+func ipscan_set_config_dir(dirStr *C.char) {
+	config.OverrideConfigDir = C.GoString(dirStr)
+}
+
 //export ipscan_new
 func ipscan_new(configJSON *C.char) C.int {
 	var cfg *config.AppConfig
@@ -403,6 +408,153 @@ func ipscan_export(handle C.int, formatStr *C.char, pathStr *C.char) C.int {
 		return -6
 	}
 	w.Flush()
+	return 0
+}
+
+//export ipscan_set_comment
+func ipscan_set_comment(handle C.int, ipStr *C.char, commentStr *C.char) C.int {
+	inst := getInstance(int(handle))
+	if inst == nil {
+		return -1
+	}
+	ip := C.GoString(ipStr)
+	comment := C.GoString(commentStr)
+	if inst.config.Comments == nil {
+		inst.config.Comments = make(map[string]string)
+	}
+	if comment == "" {
+		delete(inst.config.Comments, ip)
+	} else {
+		inst.config.Comments[ip] = comment
+	}
+	inst.config.Save()
+	return 0
+}
+
+//export ipscan_get_comment
+func ipscan_get_comment(handle C.int, ipStr *C.char) *C.char {
+	inst := getInstance(int(handle))
+	if inst == nil {
+		return C.CString("")
+	}
+	ip := C.GoString(ipStr)
+	if inst.config.Comments != nil {
+		if c, ok := inst.config.Comments[ip]; ok {
+			return C.CString(c)
+		}
+	}
+	return C.CString("")
+}
+
+//export ipscan_delete_result
+func ipscan_delete_result(handle C.int, ipStr *C.char) C.int {
+	inst := getInstance(int(handle))
+	if inst == nil {
+		return -1
+	}
+	ip := C.GoString(ipStr)
+	inst.results.RemoveByIP(ip)
+	return 0
+}
+
+//export ipscan_export_filtered
+func ipscan_export_filtered(handle C.int, formatStr *C.char, pathStr *C.char, filterStr *C.char) C.int {
+	inst := getInstance(int(handle))
+	if inst == nil {
+		return -1
+	}
+
+	format := C.GoString(formatStr)
+	path := C.GoString(pathStr)
+	filter := C.GoString(filterStr)
+
+	var exp exporter.Exporter
+	switch format {
+	case "csv":
+		exp = &exporter.CSVExporter{}
+	case "txt":
+		exp = &exporter.TXTExporter{}
+	case "xml":
+		exp = &exporter.XMLExporter{}
+	case "iplist":
+		exp = &exporter.IPListExporter{}
+	case "sql":
+		exp = &exporter.SQLExporter{}
+	default:
+		return -2
+	}
+
+	names := []string{"IP", "Ping", "TTL", "Hostname", "Ports", "Filtered Ports",
+		"MAC Address", "MAC Vendor", "Web detect", "NetBIOS Info", "Packet Loss", "Comment"}
+	exp.SetFetchers(names)
+
+	f, err := os.Create(path)
+	if err != nil {
+		return -3
+	}
+	defer f.Close()
+
+	w := bufio.NewWriter(f)
+	exp.Start(w, "")
+
+	results := inst.results.All()
+	for _, r := range results {
+		switch filter {
+		case "alive":
+			if r.Type != scanner.ResultAlive && r.Type != scanner.ResultWithPorts {
+				continue
+			}
+		case "with_ports":
+			if r.Type != scanner.ResultWithPorts {
+				continue
+			}
+		}
+		exp.WriteResult(w, r.Values)
+	}
+
+	exp.End(w)
+	w.Flush()
+	return 0
+}
+
+//export ipscan_save_favorite
+func ipscan_save_favorite(handle C.int, nameStr *C.char, feederJSON *C.char) C.int {
+	inst := getInstance(int(handle))
+	if inst == nil {
+		return -1
+	}
+	name := C.GoString(nameStr)
+	feederArgs := C.GoString(feederJSON)
+	inst.config.Favorites = append(inst.config.Favorites, config.FavoriteEntry{
+		Name:       name,
+		FeederArgs: feederArgs,
+	})
+	inst.config.Save()
+	return 0
+}
+
+//export ipscan_get_favorites
+func ipscan_get_favorites(handle C.int) *C.char {
+	inst := getInstance(int(handle))
+	if inst == nil {
+		return C.CString("[]")
+	}
+	j, _ := json.Marshal(inst.config.Favorites)
+	return C.CString(string(j))
+}
+
+//export ipscan_delete_favorite
+func ipscan_delete_favorite(handle C.int, index C.int) C.int {
+	inst := getInstance(int(handle))
+	if inst == nil {
+		return -1
+	}
+	idx := int(index)
+	if idx < 0 || idx >= len(inst.config.Favorites) {
+		return -2
+	}
+	inst.config.Favorites = append(inst.config.Favorites[:idx], inst.config.Favorites[idx+1:]...)
+	inst.config.Save()
 	return 0
 }
 

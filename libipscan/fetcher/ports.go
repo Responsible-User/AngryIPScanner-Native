@@ -88,7 +88,7 @@ func (f *PortsFetcher) scanPorts(subject *scanner.ScanningSubject) (open []int, 
 
 	for pi.HasNext() {
 		port := pi.Next()
-		addr := fmt.Sprintf("%s:%d", subject.Address, port)
+		addr := net.JoinHostPort(subject.Address.String(), fmt.Sprintf("%d", port))
 
 		conn, err := net.DialTimeout("tcp", addr, timeout)
 		if conn != nil {

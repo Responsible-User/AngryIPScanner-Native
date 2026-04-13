@@ -2,7 +2,6 @@ package pinger
 
 import (
 	"net"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,7 +9,7 @@ import (
 )
 
 var (
-	ttlRegex  = regexp.MustCompile(`ttl=(\d+)`)
+	ttlRegex  = regexp.MustCompile(`(?i)ttl=(\d+)`)
 	timeRegex = regexp.MustCompile(`time[=<]([\d.]+)\s*ms`)
 )
 
@@ -33,27 +32,16 @@ func (p *ICMPPinger) Ping(address net.IP, count int, timeout time.Duration) (*Pi
 	}
 	result := NewPingResult(address, count)
 
-	timeoutSec := int(timeout.Seconds())
-	if timeoutSec < 1 {
-		timeoutSec = 1
-	}
-
-	// Run system ping command
-	// macOS ping: -c count -W timeout_ms -q (quiet) or without -q for parseable output
-	args := []string{
-		"-c", strconv.Itoa(count),
-		"-W", strconv.Itoa(int(timeout.Milliseconds())),
-		address.String(),
-	}
-
-	cmd := exec.Command("ping", args...)
+	cmd := buildPingCmd(address.String(), count, int(timeout.Milliseconds()))
 	output, _ := cmd.CombinedOutput()
 	// We don't check error because ping returns non-zero for unreachable hosts
 
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines {
-		// Look for reply lines like: "64 bytes from 127.0.0.1: icmp_seq=0 ttl=64 time=0.042 ms"
-		if !strings.Contains(line, "bytes from") {
+		// Look for reply lines:
+		//   macOS/Linux: "64 bytes from 127.0.0.1: icmp_seq=0 ttl=64 time=0.042 ms"
+		//   Windows:     "Reply from 192.168.1.1: bytes=32 time=1ms TTL=64"
+		if !strings.Contains(line, "bytes from") && !strings.Contains(line, "Reply from") {
 			continue
 		}
 

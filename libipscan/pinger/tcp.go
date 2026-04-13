@@ -44,7 +44,7 @@ func (p *TCPPinger) Ping(address net.IP, count int, timeout time.Duration) (*Pin
 			}
 		}
 
-		addr := fmt.Sprintf("%s:%d", address, probePort)
+		addr := net.JoinHostPort(address.String(), fmt.Sprintf("%d", probePort))
 		conn, err := net.DialTimeout("tcp", addr, effectiveTimeout)
 		elapsed := time.Since(start).Milliseconds()
 
@@ -58,8 +58,8 @@ func (p *TCPPinger) Ping(address net.IP, count int, timeout time.Duration) (*Pin
 
 		if err != nil {
 			msg := err.Error()
-			if strings.Contains(msg, "refused") {
-				// RST packet — host is alive
+			if strings.Contains(msg, "refused") || strings.Contains(msg, "forcibly closed") {
+				// RST / connection reset — host is alive
 				result.AddReply(elapsed)
 				result.TimeoutAdaptAllowed = true
 				workingPort = probePort

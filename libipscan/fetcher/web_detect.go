@@ -2,7 +2,6 @@ package fetcher
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"regexp"
 	"time"
@@ -28,7 +27,7 @@ var serverHeaderRegex = regexp.MustCompile(`(?i)^server:\s+(.*)$`)
 
 func (f *WebDetectFetcher) Scan(subject *scannerPkg.ScanningSubject) interface{} {
 	timeout := time.Duration(f.portTimeout) * time.Millisecond
-	addr := fmt.Sprintf("%s:80", subject.Address)
+	addr := net.JoinHostPort(subject.Address.String(), "80")
 
 	conn, err := net.DialTimeout("tcp", addr, timeout)
 	if err != nil {

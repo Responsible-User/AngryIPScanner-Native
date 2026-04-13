@@ -2,7 +2,6 @@ package fetcher
 
 import (
 	"fmt"
-	"os/exec"
 	"regexp"
 	"strings"
 
@@ -44,21 +43,7 @@ func (f *MACFetcher) Scan(subject *scanner.ScanningSubject) interface{} {
 }
 
 func (f *MACFetcher) resolveMAC(subject *scanner.ScanningSubject) string {
-	ip := subject.Address.String()
-
-	// Run arp command (macOS/BSD style)
-	out, err := exec.Command("arp", "-n", ip).CombinedOutput()
-	if err != nil {
-		return ""
-	}
-
-	lines := strings.Split(string(out), "\n")
-	for _, line := range lines {
-		if strings.Contains(line, ip) {
-			return extractMAC(line)
-		}
-	}
-	return ""
+	return resolveARPAddress(subject.Address.String())
 }
 
 func extractMAC(line string) string {

@@ -50,7 +50,7 @@ func (f *NetBIOSInfoFetcher) Cleanup()     {}
 func (f *NetBIOSInfoFetcher) Scan(subject *scanner.ScanningSubject) interface{} {
 	timeout := time.Duration(f.timeout) * time.Millisecond
 
-	conn, err := net.DialTimeout("udp", fmt.Sprintf("%s:%d", subject.Address, netbiosUDPPort), timeout)
+	conn, err := net.DialTimeout("udp", net.JoinHostPort(subject.Address.String(), fmt.Sprintf("%d", netbiosUDPPort)), timeout)
 	if err != nil {
 		return nil
 	}

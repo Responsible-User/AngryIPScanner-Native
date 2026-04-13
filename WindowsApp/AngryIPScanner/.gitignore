@@ -1,0 +1,4 @@
+bin/
+obj/
+libipscan.dll
+libipscan.h

@@ -26,13 +26,16 @@ type ScannerConfig struct {
 	SelectedFetcherIDs   []string `json:"selectedFetchers,omitempty"`
 }
 
+// defaultPingerID can be overridden per-platform via init() in build-tagged files.
+var defaultPingerID = "pinger.combined"
+
 // DefaultScannerConfig returns a config with sensible defaults.
 func DefaultScannerConfig() *ScannerConfig {
 	return &ScannerConfig{
 		MaxThreads:         100,
 		ThreadDelay:        20,
 		ScanDeadHosts:      false,
-		SelectedPinger:     "pinger.combined",
+		SelectedPinger:     defaultPingerID,
 		PingTimeout:        2000,
 		PingCount:          3,
 		SkipBroadcastAddrs: true,
@@ -85,13 +88,23 @@ func defaultOpeners() []OpenerEntry {
 	}
 }
 
+// OverrideConfigDir can be set by the host app (e.g. Swift) before
+// calling ipscan_new. Supports sandboxed apps that must use their container.
+var OverrideConfigDir string
+
 // ConfigDir returns the configuration directory path, creating it if needed.
+// If OverrideConfigDir is set, uses that. Otherwise falls back to platform default.
 func ConfigDir() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
+	var dir string
+	if OverrideConfigDir != "" {
+		dir = OverrideConfigDir
+	} else {
+		var err error
+		dir, err = platformConfigDir()
+		if err != nil {
+			return "", err
+		}
 	}
-	dir := filepath.Join(home, ".config", "ipscan")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err
 	}
