@@ -89,12 +89,15 @@ func defaultOpeners() []OpenerEntry {
 }
 
 // ConfigDir returns the configuration directory path, creating it if needed.
+// Uses platform-appropriate locations:
+//   macOS:   ~/Library/Application Support/AngryIPScanner/
+//   Windows: %APPDATA%\AngryIPScanner\
+//   Linux:   ~/.config/AngryIPScanner/
 func ConfigDir() (string, error) {
-	home, err := os.UserHomeDir()
+	dir, err := platformConfigDir()
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Join(home, ".config", "ipscan")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err
 	}
