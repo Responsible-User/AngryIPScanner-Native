@@ -269,7 +269,7 @@ class ExportFormatHelper: NSObject {
         }
     }
 
-    @objc func formatChanged(_ sender: NSPopUpButton) {
+    @MainActor @objc func formatChanged(_ sender: NSPopUpButton) {
         guard let panel else { return }
         let idx = sender.indexOfSelectedItem
         guard idx >= 0, idx < extensions.count else { return }
