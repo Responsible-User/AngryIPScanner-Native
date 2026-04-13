@@ -44,7 +44,7 @@ func (p *TCPPinger) Ping(address net.IP, count int, timeout time.Duration) (*Pin
 			}
 		}
 
-		addr := fmt.Sprintf("%s:%d", address, probePort)
+		addr := net.JoinHostPort(address.String(), fmt.Sprintf("%d", probePort))
 		conn, err := net.DialTimeout("tcp", addr, effectiveTimeout)
 		elapsed := time.Since(start).Milliseconds()
 
