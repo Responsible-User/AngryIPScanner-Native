@@ -12,3 +12,6 @@ MacApp/Bridge/libipscan.h
 MacApp/AngryIPScanner.xcodeproj/
 .vscode/
 /legacy
+/.idea/
+TODO.md
+commit_msg.txt
