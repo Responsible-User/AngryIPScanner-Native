@@ -7,6 +7,7 @@ struct ResultTableView: View {
         .init(\.ip, order: .forward)
     ]
     @State private var detailResult: ScanResult?
+    @State private var scrollTarget: ScanResult.ID?
 
     var body: some View {
         Table(of: ScanResult.self, selection: $selectedResults, sortOrder: $sortOrder) {
@@ -98,6 +99,7 @@ struct ResultTableView: View {
                     }
             }
         }
+        .scrollPosition(id: $scrollTarget)
         .sheet(item: $detailResult) { result in
             DetailsView(result: result, bridge: bridge)
         }
@@ -172,6 +174,7 @@ struct ResultTableView: View {
             for i in (currentIndex + 1)..<results.count {
                 if results[i].type == .alive || results[i].type == .withPorts {
                     selectedResults = [results[i].id]
+                    scrollTarget = results[i].id
                     return
                 }
             }
@@ -179,6 +182,7 @@ struct ResultTableView: View {
             for i in 0...currentIndex where i < results.count {
                 if results[i].type == .alive || results[i].type == .withPorts {
                     selectedResults = [results[i].id]
+                    scrollTarget = results[i].id
                     return
                 }
             }
@@ -186,6 +190,7 @@ struct ResultTableView: View {
             for i in stride(from: currentIndex - 1, through: 0, by: -1) {
                 if results[i].type == .alive || results[i].type == .withPorts {
                     selectedResults = [results[i].id]
+                    scrollTarget = results[i].id
                     return
                 }
             }
@@ -193,6 +198,7 @@ struct ResultTableView: View {
             for i in stride(from: results.count - 1, through: currentIndex, by: -1) {
                 if results[i].type == .alive || results[i].type == .withPorts {
                     selectedResults = [results[i].id]
+                    scrollTarget = results[i].id
                     return
                 }
             }
