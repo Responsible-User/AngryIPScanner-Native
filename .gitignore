@@ -11,3 +11,4 @@ AngryIPScanner/Bridge/libipscan.dylib
 AngryIPScanner/Bridge/libipscan.h
 AngryIPScanner/AngryIPScanner.xcodeproj/
 .vscode/
+/legacy
