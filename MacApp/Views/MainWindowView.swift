@@ -109,26 +109,37 @@ struct MainWindowView: View {
     private func exportResults() {
         let panel = NSSavePanel()
         panel.title = "Export Scan Results"
-        panel.allowedContentTypes = [
-            .commaSeparatedText,
-            .plainText,
-            .xml,
-        ]
+        panel.allowedContentTypes = [.commaSeparatedText]
         panel.allowsOtherFileTypes = true
         panel.nameFieldStringValue = "scan_results.csv"
 
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
+        // Format picker accessory view
+        let formatCodes = ["csv", "txt", "xml", "iplist", "sql"]
+        let formatLabels = ["CSV (.csv)", "Text (.txt)", "XML (.xml)", "IP List (.lst)", "SQL (.sql)"]
+        let extensions = ["csv", "txt", "xml", "lst", "sql"]
 
-            let ext = url.pathExtension.lowercased()
-            let format: String
-            switch ext {
-            case "csv": format = "csv"
-            case "txt": format = "txt"
-            case "xml": format = "xml"
-            case "lst": format = "iplist"
-            case "sql": format = "sql"
-            default: format = "csv"
+        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 200, height: 24), pullsDown: false)
+        popup.addItems(withTitles: formatLabels)
+
+        let accessory = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 32))
+        let label = NSTextField(labelWithString: "Format:")
+        label.frame = NSRect(x: 0, y: 4, width: 55, height: 24)
+        popup.frame = NSRect(x: 58, y: 2, width: 220, height: 24)
+        accessory.addSubview(label)
+        accessory.addSubview(popup)
+        panel.accessoryView = accessory
+
+        panel.begin { response in
+            guard response == .OK, var url = panel.url else { return }
+
+            // Get format from popup selection
+            let idx = popup.indexOfSelectedItem
+            let format = formatCodes[idx]
+            let expectedExt = extensions[idx]
+
+            // Ensure the file has the correct extension
+            if url.pathExtension.lowercased() != expectedExt {
+                url = url.deletingPathExtension().appendingPathExtension(expectedExt)
             }
 
             // Use filtered export matching current display filter
