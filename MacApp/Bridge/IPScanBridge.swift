@@ -108,6 +108,33 @@ final class IPScanBridge {
         scanState = "scanning"
     }
 
+    func startFileScan(filePath: String) {
+        results.removeAll()
+        stats = ScanStats(total: 0, alive: 0, withPorts: 0)
+
+        let feederConfig = FeederConfig(type: "file", startIP: nil, endIP: nil, filePath: filePath)
+        guard let json = try? JSONEncoder().encode(feederConfig),
+              let jsonStr = String(data: json, encoding: .utf8) else {
+            return
+        }
+
+        CallbackRouter.shared.register(self)
+        let bridgeID = CallbackRouter.shared.id(for: self)
+        let ctxPtr = UnsafeMutableRawPointer(bitPattern: bridgeID)
+
+        ipscan_set_result_callback(handle, resultCallbackFunc, ctxPtr)
+        ipscan_set_progress_callback(handle, progressCallbackFunc, ctxPtr)
+
+        let mutableStr = strdup(jsonStr)
+        let result = ipscan_start_scan(handle, mutableStr)
+        free(mutableStr)
+        if result != 0 {
+            print("Failed to start file scan: error \(result)")
+        }
+
+        scanState = "scanning"
+    }
+
     func stopScan() {
         ipscan_stop_scan(handle)
         scanState = "stopping"

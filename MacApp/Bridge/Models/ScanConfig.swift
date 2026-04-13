@@ -28,6 +28,7 @@ struct FeederConfig: Codable {
     let type: String
     let startIP: String?
     let endIP: String?
+    var filePath: String? = nil
 }
 
 /// Fetcher info returned from Go.

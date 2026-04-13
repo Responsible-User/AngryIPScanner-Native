@@ -3,6 +3,7 @@ import SwiftUI
 enum FeederMode: String, CaseIterable {
     case range = "IP Range"
     case cidr = "CIDR"
+    case file = "File"
 }
 
 struct FeederAreaView: View {
@@ -14,6 +15,7 @@ struct FeederAreaView: View {
     @State private var cidrIP: String = ""
     @State private var cidrPrefix: Int = 24
     @State private var didAutoFillCIDR = false
+    @State private var filePath: String = ""
 
     var body: some View {
         HStack(spacing: 12) {
@@ -67,6 +69,22 @@ struct FeederAreaView: View {
                     .frame(width: 70)
                     .onChange(of: cidrPrefix) { _, _ in applyCIDR() }
                 }
+
+            case .file:
+                HStack(spacing: 8) {
+                    TextField("File path", text: $filePath)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 250)
+                    Button("Browse...") {
+                        let panel = NSOpenPanel()
+                        panel.allowsMultipleSelection = false
+                        panel.canChooseDirectories = false
+                        panel.allowedContentTypes = [.plainText, .data]
+                        if panel.runModal() == .OK, let url = panel.url {
+                            filePath = url.path
+                        }
+                    }
+                }
             }
 
             Spacer()
@@ -91,7 +109,7 @@ struct FeederAreaView: View {
             .disabled(!canStart && !isScanning)
             .alert("Start New Scan?", isPresented: $showConfirmation) {
                 Button("Discard & Scan") {
-                    bridge.startScan(startIP: startIP, endIP: endIP)
+                    doStartScan()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -105,7 +123,12 @@ struct FeederAreaView: View {
     }
 
     private var canStart: Bool {
-        !startIP.isEmpty && !endIP.isEmpty
+        switch mode {
+        case .range, .cidr:
+            return !startIP.isEmpty && !endIP.isEmpty
+        case .file:
+            return !filePath.isEmpty
+        }
     }
 
     private var buttonLabel: String {
@@ -130,6 +153,15 @@ struct FeederAreaView: View {
         guard !isScanning && canStart else { return }
         if !bridge.results.isEmpty {
             showConfirmation = true
+        } else {
+            doStartScan()
+        }
+    }
+
+    private func doStartScan() {
+        if mode == .cidr { applyCIDR() }
+        if mode == .file {
+            bridge.startFileScan(filePath: filePath)
         } else {
             bridge.startScan(startIP: startIP, endIP: endIP)
         }

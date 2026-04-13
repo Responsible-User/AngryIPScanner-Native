@@ -107,6 +107,12 @@ struct ResultTableView: View {
         .sheet(item: $detailResult) { result in
             DetailsView(result: result, bridge: bridge)
         }
+        .background {
+            // Install a double-click handler on the underlying NSTableView
+            NSTableViewDoubleClickInstaller {
+                openSelectedDetails()
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .copyIP)) { _ in
             copySelectedIPs()
         }
@@ -123,6 +129,13 @@ struct ResultTableView: View {
             if let text = notification.userInfo?["text"] as? String {
                 findInResults(text: text)
             }
+        }
+    }
+
+    private func openSelectedDetails() {
+        if let selectedID = selectedResults.first,
+           let result = sortedResults.first(where: { $0.id == selectedID }) {
+            detailResult = result
         }
     }
 
@@ -224,7 +237,7 @@ struct ResultTableView: View {
         }
     }
 
-    private static func findNSTableView(in view: NSView?) -> NSTableView? {
+    static func findNSTableView(in view: NSView?) -> NSTableView? {
         guard let view else { return nil }
         if let table = view as? NSTableView {
             return table
@@ -281,5 +294,37 @@ extension ScanResult {
     private func valueAt(_ index: Int) -> String {
         guard index < values.count else { return "" }
         return values[index].description
+    }
+}
+
+// MARK: - NSTableView double-click installer
+
+/// Invisible NSView that finds the parent NSTableView and installs a double-click action.
+struct NSTableViewDoubleClickInstaller: NSViewRepresentable {
+    let action: () -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            guard let tableView = ResultTableView.findNSTableView(in: view.window?.contentView) else { return }
+            tableView.target = context.coordinator
+            tableView.doubleAction = #selector(Coordinator.onDoubleClick)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(action: action)
+    }
+
+    class Coordinator: NSObject {
+        let action: () -> Void
+        init(action: @escaping () -> Void) { self.action = action }
+
+        @objc func onDoubleClick() {
+            action()
+        }
     }
 }

@@ -11,3 +11,4 @@ MacApp/Bridge/libipscan.dylib
 MacApp/Bridge/libipscan.h
 MacApp/AngryIPScanner.xcodeproj/
 .vscode/
+/legacy
