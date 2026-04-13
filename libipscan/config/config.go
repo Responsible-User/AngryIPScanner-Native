@@ -88,15 +88,22 @@ func defaultOpeners() []OpenerEntry {
 	}
 }
 
+// OverrideConfigDir can be set by the host app (e.g. Swift) before
+// calling ipscan_new. Supports sandboxed apps that must use their container.
+var OverrideConfigDir string
+
 // ConfigDir returns the configuration directory path, creating it if needed.
-// Uses platform-appropriate locations:
-//   macOS:   ~/Library/Application Support/AngryIPScanner/
-//   Windows: %APPDATA%\AngryIPScanner\
-//   Linux:   ~/.config/AngryIPScanner/
+// If OverrideConfigDir is set, uses that. Otherwise falls back to platform default.
 func ConfigDir() (string, error) {
-	dir, err := platformConfigDir()
-	if err != nil {
-		return "", err
+	var dir string
+	if OverrideConfigDir != "" {
+		dir = OverrideConfigDir
+	} else {
+		var err error
+		dir, err = platformConfigDir()
+		if err != nil {
+			return "", err
+		}
 	}
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err

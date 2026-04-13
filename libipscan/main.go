@@ -51,6 +51,11 @@ var (
 	nextID     = 1
 )
 
+//export ipscan_set_config_dir
+func ipscan_set_config_dir(dirStr *C.char) {
+	config.OverrideConfigDir = C.GoString(dirStr)
+}
+
 //export ipscan_new
 func ipscan_new(configJSON *C.char) C.int {
 	var cfg *config.AppConfig
