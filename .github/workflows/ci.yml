@@ -76,4 +76,10 @@ jobs:
 
       - name: Build Swift app
         working-directory: MacApp
-        run: xcodebuild -scheme AngryIPScanner -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+        run: >
+          xcodebuild -scheme AngryIPScanner -configuration Debug build
+          CODE_SIGN_IDENTITY="-"
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGN_ENTITLEMENTS=""
+          ENABLE_HARDENED_RUNTIME=NO
+          DEVELOPMENT_TEAM=""
