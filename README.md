@@ -1,8 +1,10 @@
 # Angry IP Scanner (Native)
 
-A fast and friendly network scanner, rewritten as a native macOS app with a cross-platform Go core.
+A fast and friendly network scanner, rewritten as a native macOS app with a cross-platform Go core. This shares no code with the original Angry IP Scanner.
 
 This is a ground-up rewrite of [Angry IP Scanner](https://angryip.org/) — the Java/SWT codebase has been replaced with **Go** (scanning engine) and **Swift/SwiftUI** (macOS UI). No Java, no JVM.
+
+There will be native Windows and Linux apps at a later date, as I work on making all the apps feature complete with the old Java version,
 
 ## Download
 

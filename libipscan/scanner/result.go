@@ -94,6 +94,29 @@ func (l *ScanningResultList) All() []*ScanningResult {
 	return cp
 }
 
+// RemoveByIP removes all results matching the given IP string and recalculates stats.
+func (l *ScanningResultList) RemoveByIP(ip string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	filtered := l.results[:0]
+	l.aliveCount = 0
+	l.withPortCount = 0
+	for _, r := range l.results {
+		if r.Address.String() == ip {
+			continue
+		}
+		filtered = append(filtered, r)
+		switch r.Type {
+		case ResultAlive:
+			l.aliveCount++
+		case ResultWithPorts:
+			l.aliveCount++
+			l.withPortCount++
+		}
+	}
+	l.results = filtered
+}
+
 // Clear removes all results and resets statistics.
 func (l *ScanningResultList) Clear() {
 	l.mu.Lock()

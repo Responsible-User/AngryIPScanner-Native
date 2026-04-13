@@ -6,6 +6,7 @@ struct ResultTableView: View {
     @State private var sortOrder: [KeyPathComparator<ScanResult>] = [
         .init(\.ip, order: .forward)
     ]
+    @State private var detailResult: ScanResult?
 
     var body: some View {
         Table(of: ScanResult.self, selection: $selectedResults, sortOrder: $sortOrder) {
@@ -62,6 +63,12 @@ struct ResultTableView: View {
             ForEach(sortedResults) { result in
                 TableRow(result)
                     .contextMenu {
+                        Button("Show Details...") {
+                            detailResult = result
+                        }
+
+                        Divider()
+
                         Button("Copy IP") {
                             copyToClipboard(result.ip)
                         }
@@ -69,8 +76,30 @@ struct ResultTableView: View {
                             let text = result.values.map(\.description).joined(separator: "\t")
                             copyToClipboard(text)
                         }
+
+                        Divider()
+
+                        Menu("Open") {
+                            Button("Web Browser") { bridge.openInBrowser(ip: result.ip) }
+                            Button("SSH") { bridge.openSSH(ip: result.ip) }
+                            Button("Ping") { bridge.openPing(ip: result.ip) }
+                            Button("Traceroute") { bridge.openTraceroute(ip: result.ip) }
+                        }
+
+                        Divider()
+
+                        Button("Rescan") {
+                            bridge.startScan(startIP: result.ip, endIP: result.ip)
+                        }
+
+                        Button("Delete", role: .destructive) {
+                            bridge.deleteResult(ip: result.ip)
+                        }
                     }
             }
+        }
+        .sheet(item: $detailResult) { result in
+            DetailsView(result: result, bridge: bridge)
         }
         .onReceive(NotificationCenter.default.publisher(for: .copyIP)) { _ in
             copySelectedIPs()

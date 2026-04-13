@@ -89,6 +89,14 @@ struct FeederAreaView: View {
             .controlSize(.large)
             .keyboardShortcut(.return, modifiers: [])
             .disabled(!canStart && !isScanning)
+            .alert("Start New Scan?", isPresented: $showConfirmation) {
+                Button("Discard & Scan") {
+                    bridge.startScan(startIP: startIP, endIP: endIP)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Previous scan results will be discarded.")
+            }
         }
     }
 
@@ -116,9 +124,15 @@ struct FeederAreaView: View {
         }
     }
 
+    @State private var showConfirmation = false
+
     private func startScan() {
         guard !isScanning && canStart else { return }
-        bridge.startScan(startIP: startIP, endIP: endIP)
+        if !bridge.results.isEmpty {
+            showConfirmation = true
+        } else {
+            bridge.startScan(startIP: startIP, endIP: endIP)
+        }
     }
 
     private func applyCIDR() {

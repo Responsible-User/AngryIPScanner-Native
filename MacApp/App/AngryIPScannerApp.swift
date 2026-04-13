@@ -5,6 +5,8 @@ struct AngryIPScannerApp: App {
     @State private var bridge = IPScanBridge()
     @State private var showAbout = false
     @State private var showSelectFetchers = false
+    @State private var showSaveFavorite = false
+    @State private var showManageFavorites = false
 
     var body: some Scene {
         WindowGroup {
@@ -18,6 +20,14 @@ struct AngryIPScannerApp: App {
                         }
                 }
                 .sheet(isPresented: $showSelectFetchers) { SelectFetchersView(bridge: bridge) }
+                .sheet(isPresented: $showSaveFavorite) {
+                    SaveFavoriteView(bridge: bridge, startIP: "", endIP: "")
+                }
+                .sheet(isPresented: $showManageFavorites) {
+                    ManageFavoritesView(bridge: bridge) { start, end in
+                        NotificationCenter.default.post(name: .loadFavorite, object: nil, userInfo: ["startIP": start, "endIP": end])
+                    }
+                }
         }
         .defaultSize(width: 900, height: 500)
         .commands {
@@ -87,6 +97,16 @@ struct AngryIPScannerApp: App {
                     } else {
                         Text("Show With Ports Only")
                     }
+                }
+            }
+
+            // Favorites menu
+            CommandMenu("Favorites") {
+                Button("Save Current Scan...") {
+                    showSaveFavorite = true
+                }
+                Button("Manage Favorites...") {
+                    showManageFavorites = true
                 }
             }
 
@@ -161,4 +181,5 @@ extension Notification.Name {
     static let goToNextAlive = Notification.Name("goToNextAlive")
     static let goToPrevAlive = Notification.Name("goToPrevAlive")
     static let showFind = Notification.Name("showFind")
+    static let loadFavorite = Notification.Name("loadFavorite")
 }

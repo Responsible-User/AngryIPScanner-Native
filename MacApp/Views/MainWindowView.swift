@@ -4,6 +4,7 @@ struct MainWindowView: View {
     @Bindable var bridge: IPScanBridge
     @State private var startIP: String = ""
     @State private var endIP: String = ""
+    @State private var showScanConfirmation = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,6 +32,14 @@ struct MainWindowView: View {
         .frame(minWidth: 600, minHeight: 400)
         .onAppear {
             autoDetectLocalRange()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .loadFavorite)) { notification in
+            if let info = notification.userInfo,
+               let start = info["startIP"] as? String,
+               let end = info["endIP"] as? String {
+                startIP = start
+                endIP = end
+            }
         }
         .navigationTitle(windowTitle)
     }
