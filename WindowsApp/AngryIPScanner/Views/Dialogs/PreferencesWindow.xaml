@@ -43,9 +43,10 @@
                             <StackPanel Orientation="Horizontal" Margin="0,2">
                                 <TextBlock Text="Method:" Width="140"
                                            VerticalAlignment="Center"/>
-                                <ComboBox x:Name="PingerCombo" Width="180">
+                                <ComboBox x:Name="PingerCombo" Width="220">
+                                    <ComboBoxItem Content="Windows ICMP (Recommended)" Tag="pinger.windows"/>
                                     <ComboBoxItem Content="Combined UDP+TCP" Tag="pinger.combined"/>
-                                    <ComboBoxItem Content="ICMP" Tag="pinger.icmp"/>
+                                    <ComboBoxItem Content="ICMP (via ping.exe)" Tag="pinger.icmp"/>
                                     <ComboBoxItem Content="TCP" Tag="pinger.tcp"/>
                                     <ComboBoxItem Content="UDP" Tag="pinger.udp"/>
                                 </ComboBox>

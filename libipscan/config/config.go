@@ -26,13 +26,16 @@ type ScannerConfig struct {
 	SelectedFetcherIDs   []string `json:"selectedFetchers,omitempty"`
 }
 
+// defaultPingerID can be overridden per-platform via init() in build-tagged files.
+var defaultPingerID = "pinger.combined"
+
 // DefaultScannerConfig returns a config with sensible defaults.
 func DefaultScannerConfig() *ScannerConfig {
 	return &ScannerConfig{
 		MaxThreads:         100,
 		ThreadDelay:        20,
 		ScanDeadHosts:      false,
-		SelectedPinger:     "pinger.combined",
+		SelectedPinger:     defaultPingerID,
 		PingTimeout:        2000,
 		PingCount:          3,
 		SkipBroadcastAddrs: true,
