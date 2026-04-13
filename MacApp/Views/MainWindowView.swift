@@ -99,10 +99,19 @@ struct MainWindowView: View {
     }
 
     private var windowTitle: String {
-        if bridge.scanState == "scanning", let p = bridge.progress {
-            return String(format: "%.0f%% - Angry IP Scanner", p.percent)
+        let rangeSuffix = if !startIP.isEmpty && !endIP.isEmpty {
+            " — \(startIP) - \(endIP)"
+        } else {
+            ""
         }
-        return "Angry IP Scanner"
+
+        if bridge.scanState == "scanning", let p = bridge.progress {
+            return String(format: "%.0f%%", p.percent) + rangeSuffix
+        }
+        if bridge.stats.total > 0 {
+            return "Done" + rangeSuffix
+        }
+        return "Angry IP Scanner" + rangeSuffix
     }
 
     // MARK: - Export
