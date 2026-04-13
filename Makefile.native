@@ -5,9 +5,9 @@ all: go swift
 
 # ── macOS ──────────────────────────────────────────────────
 
-# Build the Go shared library (macOS)
+# Build the Go shared library (macOS) — target macOS 14 minimum
 go:
-	cd libipscan && go build -buildmode=c-shared -o ../MacApp/Bridge/libipscan.dylib
+	cd libipscan && CGO_LDFLAGS="-mmacosx-version-min=14.0" CGO_CFLAGS="-mmacosx-version-min=14.0" go build -buildmode=c-shared -o ../MacApp/Bridge/libipscan.dylib
 	install_name_tool -id "@rpath/libipscan.dylib" MacApp/Bridge/libipscan.dylib
 
 # Build the Swift app (requires go target first)
