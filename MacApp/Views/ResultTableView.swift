@@ -7,7 +7,6 @@ struct ResultTableView: View {
         .init(\.ip, order: .forward)
     ]
     @State private var detailResult: ScanResult?
-    @State private var scrollTarget: ScanResult.ID?
 
     var body: some View {
         Table(of: ScanResult.self, selection: $selectedResults, sortOrder: $sortOrder) {
@@ -99,7 +98,6 @@ struct ResultTableView: View {
                     }
             }
         }
-        .scrollPosition(id: $scrollTarget)
         .sheet(item: $detailResult) { result in
             DetailsView(result: result, bridge: bridge)
         }
@@ -170,39 +168,62 @@ struct ResultTableView: View {
         }
 
         // Search for next/previous alive
+        var targetIndex: Int?
         if forward {
             for i in (currentIndex + 1)..<results.count {
                 if results[i].type == .alive || results[i].type == .withPorts {
-                    selectedResults = [results[i].id]
-                    scrollTarget = results[i].id
-                    return
+                    targetIndex = i; break
                 }
             }
-            // Wrap around
-            for i in 0...currentIndex where i < results.count {
-                if results[i].type == .alive || results[i].type == .withPorts {
-                    selectedResults = [results[i].id]
-                    scrollTarget = results[i].id
-                    return
+            if targetIndex == nil {
+                for i in 0..<min(currentIndex + 1, results.count) {
+                    if results[i].type == .alive || results[i].type == .withPorts {
+                        targetIndex = i; break
+                    }
                 }
             }
         } else {
             for i in stride(from: currentIndex - 1, through: 0, by: -1) {
                 if results[i].type == .alive || results[i].type == .withPorts {
-                    selectedResults = [results[i].id]
-                    scrollTarget = results[i].id
-                    return
+                    targetIndex = i; break
                 }
             }
-            // Wrap around
-            for i in stride(from: results.count - 1, through: currentIndex, by: -1) {
-                if results[i].type == .alive || results[i].type == .withPorts {
-                    selectedResults = [results[i].id]
-                    scrollTarget = results[i].id
-                    return
+            if targetIndex == nil {
+                for i in stride(from: results.count - 1, through: max(currentIndex, 0), by: -1) {
+                    if results[i].type == .alive || results[i].type == .withPorts {
+                        targetIndex = i; break
+                    }
                 }
             }
         }
+
+        if let idx = targetIndex {
+            selectedResults = [results[idx].id]
+            scrollNSTableView(to: idx)
+        }
+    }
+
+    /// Finds the underlying NSTableView in the view hierarchy and scrolls to the given row.
+    private func scrollNSTableView(to row: Int) {
+        DispatchQueue.main.async {
+            guard let window = NSApp.keyWindow else { return }
+            if let tableView = Self.findNSTableView(in: window.contentView) {
+                tableView.scrollRowToVisible(row)
+            }
+        }
+    }
+
+    private static func findNSTableView(in view: NSView?) -> NSTableView? {
+        guard let view else { return nil }
+        if let table = view as? NSTableView {
+            return table
+        }
+        for subview in view.subviews {
+            if let found = findNSTableView(in: subview) {
+                return found
+            }
+        }
+        return nil
     }
 }
 
