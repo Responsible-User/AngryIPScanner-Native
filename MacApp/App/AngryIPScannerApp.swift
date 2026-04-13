@@ -61,8 +61,10 @@ struct AngryIPScannerApp: App {
                 .keyboardShortcut("c", modifiers: [.command, .option])
             }
 
-            // View menu
-            CommandMenu("View") {
+            // Add to the existing View menu (not a new one)
+            CommandGroup(after: .toolbar) {
+                Divider()
+
                 Button("Select Fetchers...") {
                     showSelectFetchers = true
                 }

@@ -107,6 +107,12 @@ struct ResultTableView: View {
         .onReceive(NotificationCenter.default.publisher(for: .copyAll)) { _ in
             copySelectedAll()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .goToNextAlive)) { _ in
+            goToAlive(forward: true)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .goToPrevAlive)) { _ in
+            goToAlive(forward: false)
+        }
     }
 
     private var sortedResults: [ScanResult] {
@@ -146,6 +152,51 @@ struct ResultTableView: View {
             .map { $0.values.map(\.description).joined(separator: "\t") }
             .joined(separator: "\n")
         if !lines.isEmpty { copyToClipboard(lines) }
+    }
+
+    private func goToAlive(forward: Bool) {
+        let results = sortedResults
+        guard !results.isEmpty else { return }
+
+        // Find current position
+        let currentIndex: Int
+        if let selectedID = selectedResults.first,
+           let idx = results.firstIndex(where: { $0.id == selectedID }) {
+            currentIndex = idx
+        } else {
+            currentIndex = forward ? -1 : results.count
+        }
+
+        // Search for next/previous alive
+        if forward {
+            for i in (currentIndex + 1)..<results.count {
+                if results[i].type == .alive || results[i].type == .withPorts {
+                    selectedResults = [results[i].id]
+                    return
+                }
+            }
+            // Wrap around
+            for i in 0...currentIndex where i < results.count {
+                if results[i].type == .alive || results[i].type == .withPorts {
+                    selectedResults = [results[i].id]
+                    return
+                }
+            }
+        } else {
+            for i in stride(from: currentIndex - 1, through: 0, by: -1) {
+                if results[i].type == .alive || results[i].type == .withPorts {
+                    selectedResults = [results[i].id]
+                    return
+                }
+            }
+            // Wrap around
+            for i in stride(from: results.count - 1, through: currentIndex, by: -1) {
+                if results[i].type == .alive || results[i].type == .withPorts {
+                    selectedResults = [results[i].id]
+                    return
+                }
+            }
+        }
     }
 }
 
