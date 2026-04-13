@@ -44,6 +44,12 @@ struct ResultTableView: View {
             }
             .width(min: 60, ideal: 100)
 
+            TableColumn("Filtered Ports", value: \.filteredPortsSort) { result in
+                Text(valueAt(index: 5, in: result))
+                    .font(.system(.body, design: .monospaced))
+            }
+            .width(min: 60, ideal: 80)
+
             TableColumn("MAC Address", value: \.macSort) { result in
                 Text(valueAt(index: 6, in: result))
                     .font(.system(.body, design: .monospaced))
@@ -112,6 +118,11 @@ struct ResultTableView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .goToPrevAlive)) { _ in
             goToAlive(forward: false)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .findNext)) { notification in
+            if let text = notification.userInfo?["text"] as? String {
+                findInResults(text: text)
+            }
         }
     }
 
@@ -225,6 +236,34 @@ struct ResultTableView: View {
         }
         return nil
     }
+
+    private func findInResults(text: String) {
+        let results = sortedResults
+        let search = text.lowercased()
+        guard !search.isEmpty, !results.isEmpty else { return }
+
+        // Start from current selection or beginning
+        let startIdx: Int
+        if let selectedID = selectedResults.first,
+           let idx = results.firstIndex(where: { $0.id == selectedID }) {
+            startIdx = idx + 1
+        } else {
+            startIdx = 0
+        }
+
+        // Search forward with wrap
+        for offset in 0..<results.count {
+            let i = (startIdx + offset) % results.count
+            let row = results[i]
+            let matches = row.values.contains { $0.description.lowercased().contains(search) }
+                || row.ip.lowercased().contains(search)
+            if matches {
+                selectedResults = [row.id]
+                scrollNSTableView(to: i)
+                return
+            }
+        }
+    }
 }
 
 // MARK: - Sortable key paths for all columns
@@ -234,6 +273,7 @@ extension ScanResult {
     var ttlSort: String { valueAt(2) }
     var hostnameSort: String { valueAt(3) }
     var portsSort: String { valueAt(4) }
+    var filteredPortsSort: String { valueAt(5) }
     var macSort: String { valueAt(6) }
     var vendorSort: String { valueAt(7) }
     var webSort: String { valueAt(8) }

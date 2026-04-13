@@ -4,9 +4,6 @@ import SwiftUI
 struct AngryIPScannerApp: App {
     @State private var bridge = IPScanBridge()
     @State private var showAbout = false
-    @State private var showSelectFetchers = false
-    @State private var showSaveFavorite = false
-    @State private var showManageFavorites = false
 
     var body: some Scene {
         WindowGroup {
@@ -19,22 +16,13 @@ struct AngryIPScannerApp: App {
                             }
                         }
                 }
-                .sheet(isPresented: $showSelectFetchers) { SelectFetchersView(bridge: bridge) }
-                .sheet(isPresented: $showSaveFavorite) {
-                    SaveFavoriteView(bridge: bridge, startIP: "", endIP: "")
-                }
-                .sheet(isPresented: $showManageFavorites) {
-                    ManageFavoritesView(bridge: bridge) { start, end in
-                        NotificationCenter.default.post(name: .loadFavorite, object: nil, userInfo: ["startIP": start, "endIP": end])
-                    }
-                }
         }
         .defaultSize(width: 900, height: 500)
         .commands {
             // File menu: export
             CommandGroup(after: .newItem) {
                 Button("Export Results...") {
-                    exportResults()
+                    NotificationCenter.default.post(name: .exportResults, object: nil)
                 }
                 .keyboardShortcut("s", modifiers: [.command, .shift])
                 .disabled(bridge.stats.total == 0)
@@ -47,7 +35,7 @@ struct AngryIPScannerApp: App {
                 }
             }
 
-            // Edit menu: copy actions
+            // Edit menu: copy + find
             CommandGroup(after: .pasteboard) {
                 Divider()
                 Button("Copy IP") {
@@ -59,14 +47,21 @@ struct AngryIPScannerApp: App {
                     NotificationCenter.default.post(name: .copyAll, object: nil)
                 }
                 .keyboardShortcut("c", modifiers: [.command, .option])
+
+                Divider()
+
+                Button("Find...") {
+                    NotificationCenter.default.post(name: .showFind, object: nil)
+                }
+                .keyboardShortcut("f", modifiers: .command)
             }
 
-            // Add to the existing View menu (not a new one)
+            // Add to existing View menu
             CommandGroup(after: .toolbar) {
                 Divider()
 
                 Button("Select Fetchers...") {
-                    showSelectFetchers = true
+                    NotificationCenter.default.post(name: .showSelectFetchers, object: nil)
                 }
 
                 Divider()
@@ -105,10 +100,10 @@ struct AngryIPScannerApp: App {
             // Favorites menu
             CommandMenu("Favorites") {
                 Button("Save Current Scan...") {
-                    showSaveFavorite = true
+                    NotificationCenter.default.post(name: .showSaveFavorite, object: nil)
                 }
                 Button("Manage Favorites...") {
-                    showManageFavorites = true
+                    NotificationCenter.default.post(name: .showManageFavorites, object: nil)
                 }
             }
 
@@ -123,13 +118,6 @@ struct AngryIPScannerApp: App {
                     NotificationCenter.default.post(name: .goToPrevAlive, object: nil)
                 }
                 .keyboardShortcut(.upArrow, modifiers: [.command, .option])
-
-                Divider()
-
-                Button("Find...") {
-                    NotificationCenter.default.post(name: .showFind, object: nil)
-                }
-                .keyboardShortcut("f", modifiers: .command)
             }
         }
 
@@ -137,45 +125,9 @@ struct AngryIPScannerApp: App {
             PreferencesView(bridge: bridge)
         }
     }
-
-    private func exportResults() {
-        let panel = NSSavePanel()
-        panel.title = "Export Scan Results"
-        panel.allowedContentTypes = [
-            .commaSeparatedText,
-            .plainText,
-            .xml,
-        ]
-        panel.allowsOtherFileTypes = true
-        panel.nameFieldStringValue = "scan_results.csv"
-
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
-
-            let ext = url.pathExtension.lowercased()
-            let format: String
-            switch ext {
-            case "csv": format = "csv"
-            case "txt": format = "txt"
-            case "xml": format = "xml"
-            case "lst": format = "iplist"
-            case "sql": format = "sql"
-            default: format = "csv"
-            }
-
-            let success = bridge.exportResults(format: format, to: url)
-            if !success {
-                let alert = NSAlert()
-                alert.messageText = "Export Failed"
-                alert.informativeText = "Could not export results to \(url.lastPathComponent)"
-                alert.alertStyle = .warning
-                alert.runModal()
-            }
-        }
-    }
 }
 
-// MARK: - Notification names for menu -> view communication
+// MARK: - Notification names
 
 extension Notification.Name {
     static let copyIP = Notification.Name("copyIP")
@@ -184,4 +136,8 @@ extension Notification.Name {
     static let goToPrevAlive = Notification.Name("goToPrevAlive")
     static let showFind = Notification.Name("showFind")
     static let loadFavorite = Notification.Name("loadFavorite")
+    static let showSaveFavorite = Notification.Name("showSaveFavorite")
+    static let showManageFavorites = Notification.Name("showManageFavorites")
+    static let showSelectFetchers = Notification.Name("showSelectFetchers")
+    static let exportResults = Notification.Name("exportResults")
 }

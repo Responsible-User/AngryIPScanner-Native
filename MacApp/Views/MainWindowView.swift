@@ -4,10 +4,35 @@ struct MainWindowView: View {
     @Bindable var bridge: IPScanBridge
     @State private var startIP: String = ""
     @State private var endIP: String = ""
-    @State private var showScanConfirmation = false
+    @State private var showSaveFavorite = false
+    @State private var showManageFavorites = false
+    @State private var showSelectFetchers = false
+    @State private var showFind = false
+    @State private var searchText = ""
 
     var body: some View {
         VStack(spacing: 0) {
+            // Search bar (shown when Cmd+F is pressed)
+            if showFind {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                    TextField("Search results...", text: $searchText)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit {
+                            NotificationCenter.default.post(name: .findNext, object: nil, userInfo: ["text": searchText])
+                        }
+                    Button("Done") {
+                        showFind = false
+                        searchText = ""
+                    }
+                    .keyboardShortcut(.escape, modifiers: [])
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                Divider()
+            }
+
             // Feeder area + controls
             FeederAreaView(
                 bridge: bridge,
@@ -33,6 +58,7 @@ struct MainWindowView: View {
         .onAppear {
             autoDetectLocalRange()
         }
+        // Menu notification handlers
         .onReceive(NotificationCenter.default.publisher(for: .loadFavorite)) { notification in
             if let info = notification.userInfo,
                let start = info["startIP"] as? String,
@@ -40,6 +66,33 @@ struct MainWindowView: View {
                 startIP = start
                 endIP = end
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showSaveFavorite)) { _ in
+            showSaveFavorite = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showManageFavorites)) { _ in
+            showManageFavorites = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showSelectFetchers)) { _ in
+            showSelectFetchers = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showFind)) { _ in
+            showFind = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .exportResults)) { _ in
+            exportResults()
+        }
+        .sheet(isPresented: $showSaveFavorite) {
+            SaveFavoriteView(bridge: bridge, startIP: startIP, endIP: endIP)
+        }
+        .sheet(isPresented: $showManageFavorites) {
+            ManageFavoritesView(bridge: bridge) { start, end in
+                startIP = start
+                endIP = end
+            }
+        }
+        .sheet(isPresented: $showSelectFetchers) {
+            SelectFetchersView(bridge: bridge)
         }
         .navigationTitle(windowTitle)
     }
@@ -50,6 +103,54 @@ struct MainWindowView: View {
         }
         return "Angry IP Scanner"
     }
+
+    // MARK: - Export
+
+    private func exportResults() {
+        let panel = NSSavePanel()
+        panel.title = "Export Scan Results"
+        panel.allowedContentTypes = [
+            .commaSeparatedText,
+            .plainText,
+            .xml,
+        ]
+        panel.allowsOtherFileTypes = true
+        panel.nameFieldStringValue = "scan_results.csv"
+
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+
+            let ext = url.pathExtension.lowercased()
+            let format: String
+            switch ext {
+            case "csv": format = "csv"
+            case "txt": format = "txt"
+            case "xml": format = "xml"
+            case "lst": format = "iplist"
+            case "sql": format = "sql"
+            default: format = "csv"
+            }
+
+            // Use filtered export matching current display filter
+            let filter: String
+            switch bridge.displayFilter {
+            case .all: filter = "all"
+            case .alive: filter = "alive"
+            case .withPorts: filter = "with_ports"
+            }
+
+            let success = bridge.exportFiltered(format: format, to: url, filter: filter)
+            if !success {
+                let alert = NSAlert()
+                alert.messageText = "Export Failed"
+                alert.informativeText = "Could not export results to \(url.lastPathComponent)"
+                alert.alertStyle = .warning
+                alert.runModal()
+            }
+        }
+    }
+
+    // MARK: - Network detection
 
     private func autoDetectLocalRange() {
         guard startIP.isEmpty else { return }
@@ -63,14 +164,13 @@ struct MainWindowView: View {
         let ip = info.ip
         let prefix = info.prefixLen
 
-        // Calculate CIDR range
         let mask: UInt32 = prefix == 0 ? 0 : ~((1 << (32 - prefix)) - 1)
         let ipNum = ipToUInt32(ip)
         let networkStart = ipNum & mask
         let networkEnd = networkStart | ~mask
 
-        startIP = uint32ToIP(networkStart + 1) // skip network address
-        endIP = uint32ToIP(networkEnd - 1)     // skip broadcast
+        startIP = uint32ToIP(networkStart + 1)
+        endIP = uint32ToIP(networkEnd - 1)
     }
 
     private struct InterfaceInfo {
@@ -89,7 +189,6 @@ struct MainWindowView: View {
             let name = String(cString: ptr.pointee.ifa_name)
             guard name.hasPrefix("en") else { continue }
 
-            // Get IP
             var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
             guard getnameinfo(ptr.pointee.ifa_addr, socklen_t(addr.sa_len),
                              &hostname, socklen_t(hostname.count),
@@ -102,12 +201,10 @@ struct MainWindowView: View {
             let bytes = parts.compactMap { UInt8($0) }
             guard bytes.count == 4 else { continue }
 
-            // Get netmask to determine prefix length
             if let netmask = ptr.pointee.ifa_netmask {
                 let maskAddr = netmask.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
                 let maskInt = UInt32(bigEndian: maskAddr.sin_addr.s_addr)
                 let prefix = maskInt.nonzeroBitCount
-
                 return InterfaceInfo(ip: bytes, prefixLen: prefix)
             }
 
@@ -123,4 +220,8 @@ struct MainWindowView: View {
     private func uint32ToIP(_ n: UInt32) -> String {
         "\(n >> 24 & 0xFF).\(n >> 16 & 0xFF).\(n >> 8 & 0xFF).\(n & 0xFF)"
     }
+}
+
+extension Notification.Name {
+    static let findNext = Notification.Name("findNext")
 }
