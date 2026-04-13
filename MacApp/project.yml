@@ -59,10 +59,14 @@ targets:
           mkdir -p "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}"
           cp "${PROJECT_DIR}/Bridge/libipscan.dylib" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/"
           install_name_tool -id "@rpath/libipscan.dylib" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib"
-          # Sign the Go dylib with the same team identity as the app
+          # Sign the Go dylib — try matching identity, fall back to ad-hoc
           if [ "${CONFIGURATION}" = "Release" ]; then
-            codesign --force --options runtime --timestamp --sign "Developer ID Application: Jacob Braun (LXEJ8DA986)" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib"
+            codesign --force --options runtime --timestamp --sign "Developer ID Application: Jacob Braun (LXEJ8DA986)" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib" 2>/dev/null || \
+            codesign --force --sign - "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib"
           else
-            codesign --force --sign "Apple Development: Jacob Braun (7LEK525S2S)" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib"
+            codesign --force --sign "Apple Development: Jacob Braun (7LEK525S2S)" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib" 2>/dev/null || \
+            codesign --force --sign - "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib"
           fi
         name: "Copy and sign libipscan.dylib"
+        outputFiles:
+          - "$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/libipscan.dylib"
