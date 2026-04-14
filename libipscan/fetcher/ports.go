@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Responsible-User/GoNetworkScanner/libipscan/ipnet"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/pinger"
 	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
@@ -77,8 +78,8 @@ func (f *PortsFetcher) scanPorts(subject *scanner.ScanningSubject) (open []int, 
 		return nil, nil
 	}
 
-	pi := f.portIterator.Copy()
-	if !pi.HasNext() {
+	ports := f.buildPortList(subject)
+	if len(ports) == 0 {
 		return nil, nil
 	}
 
@@ -86,8 +87,7 @@ func (f *PortsFetcher) scanPorts(subject *scanner.ScanningSubject) (open []int, 
 	filtered = make([]int, 0)
 	timeout := time.Duration(f.getAdaptedTimeout(subject)) * time.Millisecond
 
-	for pi.HasNext() {
-		port := pi.Next()
+	for _, port := range ports {
 		addr := net.JoinHostPort(subject.Address.String(), fmt.Sprintf("%d", port))
 
 		conn, err := net.DialTimeout("tcp", addr, timeout)
@@ -109,13 +109,48 @@ func (f *PortsFetcher) scanPorts(subject *scanner.ScanningSubject) (open []int, 
 	return
 }
 
+// buildPortList returns the ports to scan for this subject.
+// Always includes the configured port list; adds subject.RequestedPorts
+// (from file feeder ":port" annotations) if useRequestedPorts is enabled.
+func (f *PortsFetcher) buildPortList(subject *scanner.ScanningSubject) []int {
+	seen := make(map[int]struct{})
+	var ports []int
+
+	if f.portIterator != nil {
+		pi := f.portIterator.Copy()
+		for pi.HasNext() {
+			p := pi.Next()
+			if _, dup := seen[p]; dup {
+				continue
+			}
+			seen[p] = struct{}{}
+			ports = append(ports, p)
+		}
+	}
+
+	if f.useRequestedPorts {
+		for _, p := range subject.RequestedPorts {
+			if p <= 0 || p >= 65536 {
+				continue
+			}
+			if _, dup := seen[p]; dup {
+				continue
+			}
+			seen[p] = struct{}{}
+			ports = append(ports, p)
+		}
+	}
+
+	return ports
+}
+
 func (f *PortsFetcher) getAdaptedTimeout(subject *scanner.ScanningSubject) int {
 	if !f.adaptPortTimeout {
 		return f.portTimeout
 	}
 	if cached, ok := subject.GetParameter(paramPingResult); ok {
-		if pr, ok := cached.(interface{ LongestTimeMs() int64 }); ok {
-			adapted := int(pr.LongestTimeMs()) * 3
+		if pr, ok := cached.(*pinger.PingResult); ok && pr.LongestTime > 0 {
+			adapted := int(pr.LongestTime) * 3
 			if adapted < f.minPortTimeout {
 				adapted = f.minPortTimeout
 			}

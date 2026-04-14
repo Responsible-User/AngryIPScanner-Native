@@ -39,16 +39,24 @@ struct ResultTableView: View {
             .width(min: 100, ideal: 180)
 
             TableColumn("Ports", value: \.portsSort) { result in
-                Text(valueAt(index: 4, in: result))
+                let ports = valueAt(index: 4, in: result)
+                Text(ports)
                     .font(.system(.body, design: .monospaced))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .help(ports.isEmpty ? "" : ports)
             }
-            .width(min: 60, ideal: 100)
+            .width(min: 80, ideal: 220)
 
             TableColumn("Filtered Ports", value: \.filteredPortsSort) { result in
-                Text(valueAt(index: 5, in: result))
+                let ports = valueAt(index: 5, in: result)
+                Text(ports)
                     .font(.system(.body, design: .monospaced))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .help(ports.isEmpty ? "" : ports)
             }
-            .width(min: 60, ideal: 80)
+            .width(min: 80, ideal: 160)
 
             TableColumn("MAC Address", value: \.macSort) { result in
                 Text(valueAt(index: 6, in: result))
