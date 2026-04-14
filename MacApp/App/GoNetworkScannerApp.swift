@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct AngryIPScannerApp: App {
+struct GoNetworkScannerApp: App {
     @State private var showAbout = false
 
     var body: some Scene {
@@ -28,7 +28,7 @@ struct AngryIPScannerApp: App {
 
             // About (app menu)
             CommandGroup(replacing: .appInfo) {
-                Button("About Angry IP Scanner") {
+                Button("About Go Network Scanner") {
                     showAbout = true
                 }
             }

@@ -7,7 +7,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 var ipv4Regex = regexp.MustCompile(`\b(?:(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9])\.){3}(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9])\b`)

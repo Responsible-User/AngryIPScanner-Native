@@ -1,7 +1,7 @@
 // Package fetcher provides the Fetcher interface and registry for data collection plugins.
 package fetcher
 
-import "github.com/angryip/libipscan/scanner"
+import "github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 
 // Fetcher gathers one type of information for a scanned host (one column in results).
 type Fetcher interface {

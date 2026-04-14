@@ -4,7 +4,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 func TestIPFetcher(t *testing.T) {

@@ -24,12 +24,12 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/angryip/libipscan/config"
-	"github.com/angryip/libipscan/exporter"
-	"github.com/angryip/libipscan/feeder"
-	"github.com/angryip/libipscan/fetcher"
-	_ "github.com/angryip/libipscan/resources"
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/config"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/exporter"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/feeder"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/fetcher"
+	_ "github.com/Responsible-User/GoNetworkScanner/libipscan/resources"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 // Instance holds the state for one scanner session.

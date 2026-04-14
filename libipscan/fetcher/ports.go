@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/angryip/libipscan/ipnet"
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/ipnet"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 const (

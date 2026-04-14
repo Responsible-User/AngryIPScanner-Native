@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B4E8F5"/>
+      <stop offset="1" stop-color="#6FC4DB"/>
+    </linearGradient>
+    <radialGradient id="globe" cx="0.35" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#4AA8E0"/>
+      <stop offset="0.6" stop-color="#1E6FB3"/>
+      <stop offset="1" stop-color="#0D3D70"/>
+    </radialGradient>
+    <radialGradient id="globeHighlight" cx="0.3" cy="0.25" r="0.4">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8EDFEF"/>
+      <stop offset="1" stop-color="#5BC5DA"/>
+    </linearGradient>
+    <linearGradient id="cable" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF9933"/>
+      <stop offset="1" stop-color="#E06B00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background (required for macOS icon) -->
+  <rect width="1024" height="1024" rx="228" ry="228" fill="url(#bg)"/>
+
+  <!-- ═══════════════ GLOBE ═══════════════ -->
+  <!-- Main sphere -->
+  <circle cx="512" cy="512" r="400" fill="url(#globe)"/>
+
+  <!-- Latitude lines (horizontal arcs) -->
+  <g stroke="#ffffff" stroke-opacity="0.4" stroke-width="3" fill="none">
+    <ellipse cx="512" cy="512" rx="400" ry="60"/>
+    <ellipse cx="512" cy="512" rx="395" ry="180"/>
+    <ellipse cx="512" cy="512" rx="385" ry="300"/>
+    <!-- Off-center latitudes to show sphere tilt -->
+    <ellipse cx="512" cy="360" rx="370" ry="50"/>
+    <ellipse cx="512" cy="664" rx="370" ry="50"/>
+    <ellipse cx="512" cy="220" rx="280" ry="40"/>
+    <ellipse cx="512" cy="804" rx="280" ry="40"/>
+  </g>
+
+  <!-- Longitude lines (vertical arcs of varying width to simulate sphere) -->
+  <g stroke="#ffffff" stroke-opacity="0.4" stroke-width="3" fill="none">
+    <ellipse cx="512" cy="512" rx="60" ry="400"/>
+    <ellipse cx="512" cy="512" rx="180" ry="395"/>
+    <ellipse cx="512" cy="512" rx="300" ry="385"/>
+    <line x1="512" y1="112" x2="512" y2="912"/>
+  </g>
+
+  <!-- Simplified continent blobs (subtle) -->
+  <g fill="#7BC97A" fill-opacity="0.7" stroke="#2E6B2C" stroke-width="3" stroke-opacity="0.5">
+    <!-- Continent 1 (upper left) -->
+    <path d="M 280 340 Q 310 310 360 330 Q 400 340 380 390 Q 340 420 300 410 Q 260 390 280 340 Z"/>
+    <!-- Continent 2 (center/right) -->
+    <path d="M 540 280 Q 610 270 680 310 Q 700 360 660 400 Q 600 420 560 390 Q 530 350 540 280 Z"/>
+    <!-- Continent 3 (lower) -->
+    <path d="M 380 600 Q 450 580 530 610 Q 580 640 560 690 Q 500 720 430 700 Q 370 670 380 600 Z"/>
+    <!-- Continent 4 (right) -->
+    <path d="M 700 560 Q 750 550 780 600 Q 770 660 720 680 Q 680 650 700 560 Z"/>
+  </g>
+
+  <!-- Globe highlight (shine on upper left) -->
+  <circle cx="512" cy="512" r="400" fill="url(#globeHighlight)"/>
+
+  <!-- Globe outer ring -->
+  <circle cx="512" cy="512" r="400" fill="none" stroke="#003D5A" stroke-width="6" stroke-opacity="0.4"/>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- GOPHER -->
+  <!-- ═══════════════════════════════════════ -->
+
+  <!-- Ears -->
+  <ellipse cx="385" cy="345" rx="58" ry="72" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+  <ellipse cx="639" cy="345" rx="58" ry="72" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+  <ellipse cx="385" cy="350" rx="28" ry="45" fill="#FFA8D0"/>
+  <ellipse cx="639" cy="350" rx="28" ry="45" fill="#FFA8D0"/>
+
+  <!-- Body -->
+  <ellipse cx="512" cy="720" rx="230" ry="180" fill="url(#body)" stroke="#003D5A" stroke-width="8"/>
+
+  <!-- Feet -->
+  <ellipse cx="420" cy="890" rx="65" ry="40" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+  <ellipse cx="604" cy="890" rx="65" ry="40" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+
+  <!-- Head -->
+  <ellipse cx="512" cy="480" rx="220" ry="200" fill="url(#body)" stroke="#003D5A" stroke-width="8"/>
+
+  <!-- Eyes -->
+  <circle cx="438" cy="460" r="68" fill="#ffffff" stroke="#003D5A" stroke-width="6"/>
+  <circle cx="586" cy="460" r="68" fill="#ffffff" stroke="#003D5A" stroke-width="6"/>
+  <circle cx="452" cy="450" r="26" fill="#003D5A"/>
+  <circle cx="600" cy="450" r="26" fill="#003D5A"/>
+  <circle cx="460" cy="442" r="9" fill="#ffffff"/>
+  <circle cx="608" cy="442" r="9" fill="#ffffff"/>
+
+  <!-- Nose -->
+  <path d="M 492 538 Q 512 548 532 538 Q 522 558 512 560 Q 502 558 492 538 Z" fill="#003D5A"/>
+
+  <!-- Teeth -->
+  <rect x="495" y="560" width="16" height="36" rx="3" fill="#ffffff" stroke="#003D5A" stroke-width="4"/>
+  <rect x="513" y="560" width="16" height="36" rx="3" fill="#ffffff" stroke="#003D5A" stroke-width="4"/>
+
+  <!-- Cheek blush -->
+  <ellipse cx="360" cy="520" rx="32" ry="20" fill="#FFA8D0" fill-opacity="0.5"/>
+  <ellipse cx="664" cy="520" rx="32" ry="20" fill="#FFA8D0" fill-opacity="0.5"/>
+
+  <!-- ══ ETHERNET CABLE (orange, paw to paw) ══ -->
+  <path d="M 320 760 Q 512 900 704 760"
+        stroke="url(#cable)" stroke-width="36" fill="none" stroke-linecap="round"/>
+  <path d="M 320 760 Q 512 900 704 760"
+        stroke="#FFCC80" stroke-width="10" fill="none" stroke-linecap="round" stroke-opacity="0.7"/>
+
+  <!-- ══ ARMS ══ -->
+  <ellipse cx="290" cy="720" rx="50" ry="95" fill="url(#body)" stroke="#003D5A" stroke-width="6" transform="rotate(-10 290 720)"/>
+  <circle cx="310" cy="760" r="46" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+  <ellipse cx="734" cy="720" rx="50" ry="95" fill="url(#body)" stroke="#003D5A" stroke-width="6" transform="rotate(10 734 720)"/>
+  <circle cx="714" cy="760" r="46" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+
+  <!-- RJ45 Connectors -->
+  <g transform="translate(290 760) rotate(15)">
+    <rect x="-40" y="-22" width="80" height="44" rx="4" fill="#E8E8E8" stroke="#003D5A" stroke-width="4"/>
+    <path d="M -30 -22 L -20 -34 L 20 -34 L 30 -22 Z" fill="#E8E8E8" stroke="#003D5A" stroke-width="4"/>
+    <g fill="#D4A017">
+      <rect x="-20" y="-16" width="3" height="14"/>
+      <rect x="-12" y="-16" width="3" height="14"/>
+      <rect x="-4" y="-16" width="3" height="14"/>
+      <rect x="4" y="-16" width="3" height="14"/>
+      <rect x="12" y="-16" width="3" height="14"/>
+      <rect x="20" y="-16" width="3" height="14"/>
+    </g>
+  </g>
+  <g transform="translate(734 760) rotate(-15)">
+    <rect x="-40" y="-22" width="80" height="44" rx="4" fill="#E8E8E8" stroke="#003D5A" stroke-width="4"/>
+    <path d="M -30 -22 L -20 -34 L 20 -34 L 30 -22 Z" fill="#E8E8E8" stroke="#003D5A" stroke-width="4"/>
+    <g fill="#D4A017">
+      <rect x="-20" y="-16" width="3" height="14"/>
+      <rect x="-12" y="-16" width="3" height="14"/>
+      <rect x="-4" y="-16" width="3" height="14"/>
+      <rect x="4" y="-16" width="3" height="14"/>
+      <rect x="12" y="-16" width="3" height="14"/>
+      <rect x="20" y="-16" width="3" height="14"/>
+    </g>
+  </g>
+</svg>

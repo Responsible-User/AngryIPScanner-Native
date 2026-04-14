@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"time"
 
-	scannerPkg "github.com/angryip/libipscan/scanner"
+	scannerPkg "github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 // WebDetectFetcher detects web server software via HTTP.

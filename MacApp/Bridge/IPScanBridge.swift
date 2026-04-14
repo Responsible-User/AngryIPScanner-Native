@@ -62,7 +62,7 @@ final class IPScanBridge {
         // Tell Go where to store config — uses Apple's recommended directory,
         // which resolves to the sandbox container if sandboxed.
         if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            let configDir = appSupport.appendingPathComponent("AngryIPScanner").path
+            let configDir = appSupport.appendingPathComponent("GoNetworkScanner").path
             let dirStr = strdup(configDir)
             ipscan_set_config_dir(dirStr)
             free(dirStr)

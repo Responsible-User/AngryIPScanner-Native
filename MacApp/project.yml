@@ -1,4 +1,4 @@
-name: AngryIPScanner
+name: GoNetworkScanner
 options:
   bundleIdPrefix: toys.eat
   deploymentTarget:
@@ -12,7 +12,7 @@ settings:
     MACOSX_DEPLOYMENT_TARGET: "14.0"
 
 targets:
-  AngryIPScanner:
+  GoNetworkScanner:
     type: application
     platform: macOS
     sources:
@@ -25,14 +25,14 @@ targets:
       - path: Resources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: toys.eat.aipscanner
-        PRODUCT_NAME: Angry IP Scanner
+        PRODUCT_BUNDLE_IDENTIFIER: toys.eat.gonetscanner
+        PRODUCT_NAME: Go Network Scanner
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_GENERATION_MODE: GeneratedByXcode
-        MARKETING_VERSION: "4.0.0"
+        MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: 1
-        SWIFT_OBJC_BRIDGING_HEADER: Bridge/AngryIPScanner-Bridging-Header.h
+        SWIFT_OBJC_BRIDGING_HEADER: Bridge/GoNetworkScanner-Bridging-Header.h
         LIBRARY_SEARCH_PATHS:
           - "$(PROJECT_DIR)/Bridge"
         HEADER_SEARCH_PATHS:
@@ -47,7 +47,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "Developer ID Application"
         DEVELOPMENT_TEAM: LXEJ8DA986
-        CODE_SIGN_ENTITLEMENTS: AngryIPScanner.entitlements
+        CODE_SIGN_ENTITLEMENTS: GoNetworkScanner.entitlements
         OTHER_CODE_SIGN_FLAGS: "--timestamp"
       debug:
         CODE_SIGN_IDENTITY: "Apple Development"
@@ -59,7 +59,6 @@ targets:
           mkdir -p "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}"
           cp "${PROJECT_DIR}/Bridge/libipscan.dylib" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/"
           install_name_tool -id "@rpath/libipscan.dylib" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib"
-          # Sign the Go dylib — try matching identity, fall back to ad-hoc
           if [ "${CONFIGURATION}" = "Release" ]; then
             codesign --force --options runtime --timestamp --sign "Developer ID Application: Jacob Braun (LXEJ8DA986)" "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib" 2>/dev/null || \
             codesign --force --sign - "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libipscan.dylib"
