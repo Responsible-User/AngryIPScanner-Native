@@ -44,19 +44,21 @@ struct ResultTableView: View {
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .help(ports.isEmpty ? "" : ports)
+                    .help(ports.isEmpty ? "Open TCP ports" : ports)
             }
             .width(min: 80, ideal: 220)
 
-            TableColumn("Filtered Ports", value: \.filteredPortsSort) { result in
+            TableColumn("Filtered", value: \.filteredPortsSort) { result in
                 let ports = valueAt(index: 5, in: result)
                 Text(ports)
                     .font(.system(.body, design: .monospaced))
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .help(ports.isEmpty ? "" : ports)
+                    .help(ports.isEmpty
+                          ? "Ports that timed out — likely firewalled or a slow service. Raise port timeout in Preferences if a known-open port keeps appearing here."
+                          : "Timed out (firewalled or slow): \(ports)")
             }
-            .width(min: 80, ideal: 160)
+            .width(min: 80, ideal: 140)
 
             TableColumn("MAC Address", value: \.macSort) { result in
                 Text(valueAt(index: 6, in: result))

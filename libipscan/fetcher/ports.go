@@ -149,15 +149,26 @@ func (f *PortsFetcher) buildPortList(subject *scanner.ScanningSubject) []int {
 	return ports
 }
 
+// adaptiveHardFloor prevents the adaptive timeout from ever dropping
+// below this (in ms) regardless of user config. Services like xrdp,
+// SQL Server, and RDS gateways routinely take >200 ms to accept on
+// LAN even when the pinger sees <5 ms RTT — 500 ms gives enough
+// headroom while still letting adaptation speed up WAN scans.
+const adaptiveHardFloor = 500
+
 func (f *PortsFetcher) getAdaptedTimeout(subject *scanner.ScanningSubject) int {
 	if !f.adaptPortTimeout {
 		return f.portTimeout
 	}
 	if cached, ok := subject.GetParameter(paramPingResult); ok {
 		if pr, ok := cached.(*pinger.PingResult); ok && pr.LongestTime > 0 {
-			adapted := int(pr.LongestTime) * 3
-			if adapted < f.minPortTimeout {
-				adapted = f.minPortTimeout
+			adapted := int(pr.LongestTime) * 10
+			floor := f.minPortTimeout
+			if floor < adaptiveHardFloor {
+				floor = adaptiveHardFloor
+			}
+			if adapted < floor {
+				adapted = floor
 			}
 			if adapted > f.portTimeout {
 				adapted = f.portTimeout

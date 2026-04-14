@@ -23,8 +23,11 @@ func TestDefaultScannerConfig(t *testing.T) {
 	if !cfg.SkipBroadcastAddrs {
 		t.Error("SkipBroadcastAddrs should be true")
 	}
-	if !cfg.AdaptPortTimeout {
-		t.Error("AdaptPortTimeout should be true")
+	if cfg.AdaptPortTimeout {
+		t.Error("AdaptPortTimeout should default to false")
+	}
+	if cfg.MinPortTimeout != 500 {
+		t.Errorf("MinPortTimeout = %d, want 500", cfg.MinPortTimeout)
 	}
 }
 
