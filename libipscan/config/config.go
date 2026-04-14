@@ -37,7 +37,7 @@ func DefaultScannerConfig() *ScannerConfig {
 		ScanDeadHosts:      false,
 		SelectedPinger:     defaultPingerID,
 		PingTimeout:        2000,
-		PingCount:          3,
+		PingCount:          5,
 		SkipBroadcastAddrs: true,
 		PortTimeout:        2000,
 		AdaptPortTimeout:   true,

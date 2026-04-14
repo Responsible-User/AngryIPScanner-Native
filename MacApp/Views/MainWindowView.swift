@@ -10,6 +10,7 @@ struct MainWindowView: View {
     @State private var showSelectFetchers = false
     @State private var showFind = false
     @State private var searchText = ""
+    @State private var showStatistics = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,6 +84,9 @@ struct MainWindowView: View {
         .onReceive(NotificationCenter.default.publisher(for: .exportResults)) { _ in
             exportResults()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .showStatistics)) { _ in
+            showStatistics = true
+        }
         .sheet(isPresented: $showSaveFavorite) {
             SaveFavoriteView(bridge: bridge, startIP: startIP, endIP: endIP)
         }
@@ -94,6 +98,9 @@ struct MainWindowView: View {
         }
         .sheet(isPresented: $showSelectFetchers) {
             SelectFetchersView(bridge: bridge)
+        }
+        .sheet(isPresented: $showStatistics) {
+            StatisticsView(bridge: bridge)
         }
         .navigationTitle(windowTitle)
     }

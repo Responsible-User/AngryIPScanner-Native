@@ -14,8 +14,8 @@ func TestDefaultScannerConfig(t *testing.T) {
 	if cfg.PingTimeout != 2000 {
 		t.Errorf("PingTimeout = %d, want 2000", cfg.PingTimeout)
 	}
-	if cfg.PingCount != 3 {
-		t.Errorf("PingCount = %d, want 3", cfg.PingCount)
+	if cfg.PingCount != 5 {
+		t.Errorf("PingCount = %d, want 5", cfg.PingCount)
 	}
 	if cfg.PortString != "22,80,443" {
 		t.Errorf("PortString = %q, want %q", cfg.PortString, "22,80,443")

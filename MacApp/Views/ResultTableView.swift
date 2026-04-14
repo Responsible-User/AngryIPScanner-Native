@@ -130,6 +130,42 @@ struct ResultTableView: View {
                 findInResults(text: text)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .selectAlive)) { _ in
+            selectedResults = Set(sortedResults.filter { $0.type == .alive || $0.type == .withPorts }.map(\.id))
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .selectDead)) { _ in
+            selectedResults = Set(sortedResults.filter { $0.type == .dead }.map(\.id))
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .selectWithPorts)) { _ in
+            selectedResults = Set(sortedResults.filter { $0.type == .withPorts }.map(\.id))
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .selectInvert)) { _ in
+            let allIDs = Set(sortedResults.map(\.id))
+            selectedResults = allIDs.subtracting(selectedResults)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .exportSelection)) { _ in
+            exportSelectedRows()
+        }
+    }
+
+    private func exportSelectedRows() {
+        guard !selectedResults.isEmpty else { return }
+        let panel = NSSavePanel()
+        panel.title = "Export Selected Rows"
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = "scan_selection.csv"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            let rows = bridge.filteredResults
+                .filter { selectedResults.contains($0.id) }
+                .map { r in
+                    ([r.ip] + r.values.map(\.description))
+                        .map { "\"\($0.replacingOccurrences(of: "\"", with: "\"\""))\"" }
+                        .joined(separator: ",")
+                }
+                .joined(separator: "\n")
+            try? rows.write(to: url, atomically: true, encoding: .utf8)
+        }
     }
 
     private func openSelectedDetails() {

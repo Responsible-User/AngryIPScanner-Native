@@ -4,6 +4,11 @@ import SwiftUI
 struct GoNetworkScannerApp: App {
     @State private var showAbout = false
 
+    init() {
+        // Force the tab bar to always be visible, even with only one window
+        NSWindow.allowsAutomaticWindowTabbing = true
+    }
+
     var body: some Scene {
         WindowGroup {
             IndependentScanWindow()
@@ -15,6 +20,7 @@ struct GoNetworkScannerApp: App {
                             }
                         }
                 }
+                .background(WindowTabConfigurator())
         }
         .defaultSize(width: 900, height: 500)
         .commands {
@@ -72,6 +78,37 @@ struct GoNetworkScannerApp: App {
                 }
                 Button("Show With Ports Only") {
                     NotificationCenter.default.post(name: .setFilterWithPorts, object: nil)
+                }
+            }
+
+            // Scan menu
+            CommandMenu("Scan") {
+                Button("Show Statistics...") {
+                    NotificationCenter.default.post(name: .showStatistics, object: nil)
+                }
+                .keyboardShortcut("t", modifiers: .command)
+
+                Divider()
+
+                Menu("Select") {
+                    Button("Select Alive") {
+                        NotificationCenter.default.post(name: .selectAlive, object: nil)
+                    }
+                    Button("Select Dead") {
+                        NotificationCenter.default.post(name: .selectDead, object: nil)
+                    }
+                    Button("Select With Ports") {
+                        NotificationCenter.default.post(name: .selectWithPorts, object: nil)
+                    }
+                    Divider()
+                    Button("Invert Selection") {
+                        NotificationCenter.default.post(name: .selectInvert, object: nil)
+                    }
+                    .keyboardShortcut("i", modifiers: .command)
+                }
+
+                Button("Export Selection...") {
+                    NotificationCenter.default.post(name: .exportSelection, object: nil)
                 }
             }
 
@@ -139,4 +176,25 @@ extension Notification.Name {
     static let setFilterAll = Notification.Name("setFilterAll")
     static let setFilterAlive = Notification.Name("setFilterAlive")
     static let setFilterWithPorts = Notification.Name("setFilterWithPorts")
+    static let showStatistics = Notification.Name("showStatistics")
+    static let selectAlive = Notification.Name("selectAlive")
+    static let selectDead = Notification.Name("selectDead")
+    static let selectWithPorts = Notification.Name("selectWithPorts")
+    static let selectInvert = Notification.Name("selectInvert")
+    static let exportSelection = Notification.Name("exportSelection")
+}
+
+/// Forces the NSWindow tab bar to always be visible.
+struct WindowTabConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            if let window = view.window {
+                window.tabbingMode = .preferred
+            }
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
 }

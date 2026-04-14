@@ -75,11 +75,13 @@ struct FeederAreaView: View {
                     TextField("File path", text: $filePath)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 250)
+                        .help("Any text file. IPv4, IPv6, hostnames (example.com), and IP:port (192.168.1.1:8080) are extracted automatically.")
                     Button("Browse...") {
                         let panel = NSOpenPanel()
                         panel.allowsMultipleSelection = false
                         panel.canChooseDirectories = false
                         panel.allowedContentTypes = [.plainText, .data]
+                        panel.message = "Select a text file containing IPs, hostnames, or IP:port entries (one per line, or any format — addresses are extracted by regex)."
                         if panel.runModal() == .OK, let url = panel.url {
                             filePath = url.path
                         }
