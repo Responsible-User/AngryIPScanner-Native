@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 const paramMAC = "fetcher.mac"

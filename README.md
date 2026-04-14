@@ -1,52 +1,46 @@
-# Angry IP Scanner (Native)
+# Go Network Scanner
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
-A fast and friendly network scanner, rewritten as a native app with a cross-platform Go core. This shares no code with the original Angry IP Scanner.
+A fast, native network scanner for macOS (and soon Windows/Linux). Written from the ground up in **Go** (scanning engine) and **Swift/SwiftUI** (macOS UI). No Java, no JVM.
 
-The Java/SWT codebase has been replaced with **Go** (scanning engine) and **Swift/SwiftUI** (macOS UI). No Java, no JVM. A native Windows version (WPF/.NET) is also in progress.
+Inspired by [Angry IP Scanner](https://angryip.org). This project shares no source code with the original — it's a fresh implementation with an independent design, MIT-licensed, and aiming for Mac App Store distribution.
 
 ## Download
 
-Grab the latest signed and notarized build from [Releases](../../releases).
+Signed, notarized macOS builds: [Releases](../../releases).
 
-**macOS 14 (Sonoma) or later required.** Apple Silicon and Intel supported.  
-**2.3 MB** total (vs ~50 MB for the Java version with bundled JRE).
+**Requirements:** macOS 14 (Sonoma) or later. Apple Silicon and Intel.
 
 ## Features
 
 ### Scanning
-- **Ping sweep** with TCP, UDP, ICMP, or combined pingers
-- **12 data fetchers** — IP, Ping, TTL, Hostname, Ports, Filtered Ports, MAC Address, MAC Vendor, Web detect, NetBIOS, Packet Loss, Comments
-- **3 input modes** — IP range, CIDR (auto-detected), file import
-- **CIDR auto-detection** — reads your network adapter's IP and prefix length on launch
-- **Real-time results** — IPs appear immediately as scanning starts, update when complete
-- **IPv6 compatible** — address formatting uses `net.JoinHostPort` throughout
+- Ping sweep with **TCP, UDP, ICMP, or combined** pingers
+- **12 fetchers** — IP, Ping, TTL, Hostname, Ports, Filtered Ports, MAC Address, MAC Vendor, Web detect, NetBIOS, Packet Loss, Comments
+- **3 input modes** — IP Range, CIDR (auto-detected), File import
+- **CIDR auto-detection** — reads your network adapter on launch
+- **Real-time results** — IPs appear as scanning starts, update when complete
 
-### User Interface
-- **Native macOS UI** — SwiftUI with dark mode, Retina, proper menu bar
-- **Independent tabs** — each window/tab has its own scan engine (Cmd+N for new tab)
-- **Tab titles** show the scan range and progress percentage
-- **9 sortable columns** — click any column header for sort arrows
-- **Result filtering** — All / Alive Only / With Ports Only (status bar + View menu)
-- **Find** (Cmd+F) — search across all result values with wrap-around
-- **Go To** next/previous alive host (Cmd+Opt+Down/Up) with auto-scroll
-- **Double-click** any row to open details
-- **Right-click context menu** — Show Details, Copy IP, Copy All, Open in Browser/SSH/Ping/Traceroute, Rescan, Delete
-- **Preferences** — Scanning (threads, pinger, timeouts), Ports (common port presets + custom), Display
+### UI
+- **Native SwiftUI** — dark mode, Retina, menu bar, Settings scene
+- **Independent tabs** — each window has its own scan engine (Cmd+N)
+- **Sortable columns** with sort arrows
+- **Find** (Cmd+F) with wrap-around search
+- **Go To** next/previous alive host with auto-scroll
+- **Double-click** to open details
+- **Right-click menu** — Details, Copy, Open in Browser/SSH/Ping/Traceroute, Rescan, Delete
 - **Favorites** — save and load scan presets
-- **Per-IP comments** — editable in details window, persisted to disk
+- **Per-IP comments** persisted to disk
 
 ### Export
 - **5 formats** — CSV, TXT, XML, IP list, SQL
-- **Format picker** in save dialog with live filename extension update
-- **Filtered export** — exports only what's visible (respects All/Alive/With Ports filter)
+- Format picker in save dialog
+- Respects display filter (All / Alive / With Ports)
 
 ### Distribution
-- **Code signed** with Developer ID certificate
-- **Notarized** by Apple with stapled ticket
-- **Gatekeeper approved** — no security warnings on download
-- **38,000+ MAC vendor database** embedded in the binary
+- Code signed with Developer ID, notarized by Apple, stapled
+- 2.3 MB download
+- **MIT licensed** — suitable for Mac App Store submission
 
 ## Architecture
 
@@ -63,57 +57,49 @@ Grab the latest signed and notarized build from [Releases](../../releases).
 │       │  Go Library  │                   │
 │       │ (libipscan)  │                   │
 │       └──────────────┘                   │
-│  Scanning │ Pingers │ Fetchers │ Export  │
 └──────────────────────────────────────────┘
 ```
 
-The Go core compiles to a platform-specific shared library (`.dylib` / `.dll` / `.so`) via `cgo`. Each native UI calls it through C function pointers with JSON strings crossing the FFI boundary. The scanning engine, all fetchers, pingers, exporters, and configuration are shared across platforms.
+The Go core compiles to a platform shared library (`.dylib` / `.dll` / `.so`) via `cgo`. Each native UI calls it through C function pointers with JSON strings crossing the FFI boundary. All scanning logic is shared across platforms.
 
 ## Building
 
 ### Prerequisites
-
-- **Go** 1.22+ (`brew install go`)
-- **Xcode** 26+ with command line tools
-- **xcodegen** (`brew install xcodegen`)
+- Go 1.22+ (`brew install go`)
+- Xcode 26+ (for macOS)
+- xcodegen (`brew install xcodegen`)
 
 ### macOS
 
 ```bash
-# Build Go shared library (targeting macOS 14+)
+make -f Makefile.native all
+```
+
+Or manually:
+
+```bash
 cd libipscan
 CGO_LDFLAGS="-mmacosx-version-min=14.0" CGO_CFLAGS="-mmacosx-version-min=14.0" \
   go build -buildmode=c-shared -o ../MacApp/Bridge/libipscan.dylib
 install_name_tool -id "@rpath/libipscan.dylib" ../MacApp/Bridge/libipscan.dylib
-cd ..
-
-# Generate Xcode project and build
-cd MacApp
+cd ../MacApp
 xcodegen generate
-xcodebuild -scheme AngryIPScanner -configuration Release build
-```
-
-Or use the Makefile:
-
-```bash
-make -f Makefile.native all    # Build Go + Swift
-make -f Makefile.native test   # Run Go tests
+xcodebuild -scheme GoNetworkScanner -configuration Release build
 ```
 
 ### Windows
 
 ```powershell
-# Requires Go + GCC (LLVM/Clang for ARM64, TDM-GCC for x64)
+# Requires Go + LLVM (ARM64) or TDM-GCC (x64)
 cd libipscan
 $env:CGO_ENABLED="1"
-go build -buildmode=c-shared -o ..\WindowsApp\AngryIPScanner\libipscan.dll
+go build -buildmode=c-shared -o ..\WindowsApp\GoNetworkScanner\libipscan.dll
 
-# Build WPF app
 cd ..\WindowsApp
-dotnet build AngryIPScanner\AngryIPScanner.csproj -c Release
+dotnet build GoNetworkScanner\GoNetworkScanner.csproj -c Release
 ```
 
-### Run tests
+### Tests
 
 ```bash
 cd libipscan && go test ./... -v -race
@@ -124,46 +110,36 @@ cd libipscan && go test ./... -v -race
 ## Project Structure
 
 ```
-libipscan/           # Go core (cross-platform, ~4,000 LOC)
+libipscan/           # Go core (cross-platform)
   ipnet/             #   IP arithmetic, port parsing
-  scanner/           #   Scan engine, state machine, results
-  pinger/            #   TCP, UDP, ICMP, combined pingers
-  fetcher/           #   12 data fetchers + MAC vendor lookup
+  scanner/           #   Scan engine, state machine
+  pinger/            #   TCP, UDP, ICMP, combined
+  fetcher/           #   12 data fetchers
   feeder/            #   Range, random, file feeders
   exporter/          #   CSV, TXT, XML, IP list, SQL
-  config/            #   JSON config with platform-specific paths
-  resources/         #   Embedded MAC vendor database (38K entries)
+  config/            #   JSON config with platform paths
+  resources/         #   Embedded 38K-entry MAC vendor DB
   main.go            #   C API exports (cgo)
 
-MacApp/              # Swift/SwiftUI macOS UI (~1,500 LOC)
-  App/               #   App entry point, menu commands
-  Bridge/            #   C FFI wrapper, Codable models
-  Views/             #   SwiftUI views and dialogs
-  Resources/         #   Asset catalog (app icon from SVG)
-
+MacApp/              # Swift/SwiftUI macOS UI
 WindowsApp/          # WPF/.NET Windows UI (in progress)
 
-.github/workflows/   # CI: Go tests on macOS/Ubuntu/Windows + app build
+.github/workflows/   # CI: Go tests + app build on macOS/Linux/Windows
 ```
 
 ### Config Storage
-
-- **macOS:** `~/Library/Application Support/AngryIPScanner/config.json`
-- **Windows:** `%APPDATA%\AngryIPScanner\config.json`
-- **Linux:** `~/.config/AngryIPScanner/config.json`
+- **macOS:** `~/Library/Application Support/GoNetworkScanner/config.json`
+- **Windows:** `%APPDATA%\GoNetworkScanner\config.json`
+- **Linux:** `~/.config/GoNetworkScanner/config.json`
 
 ## License
 
-This project is inspired by [Angry IP Scanner](https://github.com/angryip/ipscan) by Anton Keks. Licensed under the **GNU General Public License v2 (GPLv2)**. See [LICENSE](LICENSE) for the full text.
+**MIT License.** See [LICENSE](LICENSE).
 
-### Attribution
-
-- Original concept from [Angry IP Scanner](https://angryip.org/) by Anton Keks and contributors
-- MAC vendor database (IEEE OUI)
-- App icon design from the original project
+Inspired by Angry IP Scanner by Anton Keks (GPLv2). No code is shared between the two projects — Go Network Scanner is a clean-room implementation.
 
 ## Contributing
 
-Pull requests welcome. The Go core (`libipscan/`) is the best place to contribute cross-platform improvements. Platform UIs are in `MacApp/` and `WindowsApp/`.
+Pull requests welcome. The Go core (`libipscan/`) is the best place to contribute cross-platform improvements. Platform UIs live in `MacApp/` and `WindowsApp/`.
 
-For bugs, open an issue with your OS version, network setup, and steps to reproduce.
+For bugs, open an issue with your OS version, network setup, and repro steps.

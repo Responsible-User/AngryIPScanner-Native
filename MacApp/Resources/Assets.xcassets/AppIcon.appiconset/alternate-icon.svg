@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00ADD8"/>
+      <stop offset="1" stop-color="#005577"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8EDFEF"/>
+      <stop offset="1" stop-color="#5BC5DA"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background (macOS icon shape) -->
+  <rect width="1024" height="1024" rx="228" ry="228" fill="url(#bg)"/>
+
+  <!-- Center glow -->
+  <rect width="1024" height="1024" rx="228" ry="228" fill="url(#glow)"/>
+
+  <!-- Network grid pattern (subtle) -->
+  <g stroke="#ffffff" stroke-opacity="0.08" stroke-width="2" fill="none">
+    <line x1="0" y1="128" x2="1024" y2="128"/>
+    <line x1="0" y1="256" x2="1024" y2="256"/>
+    <line x1="0" y1="384" x2="1024" y2="384"/>
+    <line x1="0" y1="640" x2="1024" y2="640"/>
+    <line x1="0" y1="768" x2="1024" y2="768"/>
+    <line x1="0" y1="896" x2="1024" y2="896"/>
+    <line x1="128" y1="0" x2="128" y2="1024"/>
+    <line x1="256" y1="0" x2="256" y2="1024"/>
+    <line x1="384" y1="0" x2="384" y2="1024"/>
+    <line x1="640" y1="0" x2="640" y2="1024"/>
+    <line x1="768" y1="0" x2="768" y2="1024"/>
+    <line x1="896" y1="0" x2="896" y2="1024"/>
+  </g>
+
+  <!-- Network nodes + connecting lines -->
+  <g stroke="#ffffff" stroke-opacity="0.35" stroke-width="3" fill="none">
+    <line x1="180" y1="220" x2="840" y2="220"/>
+    <line x1="180" y1="800" x2="840" y2="800"/>
+    <line x1="180" y1="220" x2="180" y2="800"/>
+    <line x1="840" y1="220" x2="840" y2="800"/>
+    <line x1="180" y1="220" x2="840" y2="800"/>
+    <line x1="840" y1="220" x2="180" y2="800"/>
+  </g>
+
+  <!-- Corner network nodes -->
+  <g fill="#ffffff" fill-opacity="0.9">
+    <circle cx="180" cy="220" r="18"/>
+    <circle cx="840" cy="220" r="18"/>
+    <circle cx="180" cy="800" r="18"/>
+    <circle cx="840" cy="800" r="18"/>
+  </g>
+
+  <!-- Gopher -->
+  <g>
+    <!-- Ears (outer) -->
+    <ellipse cx="385" cy="350" rx="58" ry="72" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+    <ellipse cx="639" cy="350" rx="58" ry="72" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+    <!-- Ears (inner) -->
+    <ellipse cx="385" cy="355" rx="28" ry="45" fill="#FFA8D0"/>
+    <ellipse cx="639" cy="355" rx="28" ry="45" fill="#FFA8D0"/>
+
+    <!-- Body -->
+    <ellipse cx="512" cy="700" rx="230" ry="180" fill="url(#body)" stroke="#003D5A" stroke-width="8"/>
+
+    <!-- Arms -->
+    <ellipse cx="310" cy="680" rx="50" ry="85" fill="url(#body)" stroke="#003D5A" stroke-width="6" transform="rotate(-15 310 680)"/>
+    <ellipse cx="714" cy="680" rx="50" ry="85" fill="url(#body)" stroke="#003D5A" stroke-width="6" transform="rotate(15 714 680)"/>
+
+    <!-- Feet -->
+    <ellipse cx="420" cy="870" rx="65" ry="40" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+    <ellipse cx="604" cy="870" rx="65" ry="40" fill="url(#body)" stroke="#003D5A" stroke-width="6"/>
+
+    <!-- Head -->
+    <ellipse cx="512" cy="480" rx="220" ry="200" fill="url(#body)" stroke="#003D5A" stroke-width="8"/>
+
+    <!-- Eye whites -->
+    <circle cx="438" cy="460" r="68" fill="#ffffff" stroke="#003D5A" stroke-width="6"/>
+    <circle cx="586" cy="460" r="68" fill="#ffffff" stroke="#003D5A" stroke-width="6"/>
+
+    <!-- Pupils (looking slightly up, alert) -->
+    <circle cx="452" cy="450" r="26" fill="#003D5A"/>
+    <circle cx="600" cy="450" r="26" fill="#003D5A"/>
+    <!-- Pupil highlights -->
+    <circle cx="460" cy="442" r="9" fill="#ffffff"/>
+    <circle cx="608" cy="442" r="9" fill="#ffffff"/>
+
+    <!-- Nose (small, triangle-ish) -->
+    <path d="M 492 538 Q 512 548 532 538 Q 522 558 512 560 Q 502 558 492 538 Z" fill="#003D5A"/>
+
+    <!-- Teeth (gopher signature — two front teeth) -->
+    <rect x="495" y="560" width="16" height="36" rx="3" fill="#ffffff" stroke="#003D5A" stroke-width="4"/>
+    <rect x="513" y="560" width="16" height="36" rx="3" fill="#ffffff" stroke="#003D5A" stroke-width="4"/>
+
+    <!-- Cheek blush -->
+    <ellipse cx="360" cy="520" rx="32" ry="20" fill="#FFA8D0" fill-opacity="0.5"/>
+    <ellipse cx="664" cy="520" rx="32" ry="20" fill="#FFA8D0" fill-opacity="0.5"/>
+  </g>
+</svg>

@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/angryip/libipscan/pinger"
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/pinger"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 const paramPingResult = "pinger"

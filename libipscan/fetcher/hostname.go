@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 // HostnameFetcher resolves hostnames via reverse DNS lookup.

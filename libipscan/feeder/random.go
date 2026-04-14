@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/angryip/libipscan/ipnet"
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/ipnet"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 // RandomFeeder generates random IP addresses within a given range.

@@ -1,6 +1,6 @@
 package fetcher
 
-import "github.com/angryip/libipscan/scanner"
+import "github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 
 // IPFetcher returns the IP address as a string.
 type IPFetcher struct{}

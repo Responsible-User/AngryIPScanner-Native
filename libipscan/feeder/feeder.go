@@ -1,7 +1,7 @@
 // Package feeder provides IP address generators for scanning.
 package feeder
 
-import "github.com/angryip/libipscan/scanner"
+import "github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 
 // Feeder generates ScanningSubject instances to be scanned.
 type Feeder interface {

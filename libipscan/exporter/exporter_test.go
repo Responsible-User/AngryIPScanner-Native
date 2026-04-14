@@ -57,7 +57,7 @@ func TestTXTExporter(t *testing.T) {
 	e.End(&buf)
 
 	out := buf.String()
-	if !strings.Contains(out, "Angry IP Scanner") {
+	if !strings.Contains(out, "Go Network Scanner") {
 		t.Error("TXT output should contain app name")
 	}
 	if !strings.Contains(out, "10.0.0.1") {

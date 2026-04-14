@@ -17,5 +17,5 @@ func platformConfigDir() (string, error) {
 		}
 		xdg = filepath.Join(home, ".config")
 	}
-	return filepath.Join(xdg, "AngryIPScanner"), nil
+	return filepath.Join(xdg, "GoNetworkScanner"), nil
 }

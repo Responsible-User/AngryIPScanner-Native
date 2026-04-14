@@ -3,8 +3,8 @@ package fetcher
 import (
 	"fmt"
 
-	"github.com/angryip/libipscan/pinger"
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/pinger"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 // PacketLossFetcher returns packet loss statistics from ping results.

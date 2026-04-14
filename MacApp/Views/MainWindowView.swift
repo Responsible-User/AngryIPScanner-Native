@@ -111,7 +111,7 @@ struct MainWindowView: View {
         if bridge.stats.total > 0 {
             return "Done" + rangeSuffix
         }
-        return "Angry IP Scanner" + rangeSuffix
+        return "Go Network Scanner" + rangeSuffix
     }
 
     // MARK: - Export
