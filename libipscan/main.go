@@ -20,7 +20,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 	"unsafe"
 
@@ -43,6 +45,11 @@ type Instance struct {
 	resultCtx  unsafe.Pointer
 	progressCb C.ProgressCallback
 	progressCtx unsafe.Pointer
+
+	// configMu protects all access to config (reads AND writes).
+	// Config can be mutated by C API (setConfig/setComment/favorites/etc)
+	// while scan goroutines read from it.
+	configMu sync.RWMutex
 }
 
 var (
@@ -54,6 +61,14 @@ var (
 //export ipscan_set_config_dir
 func ipscan_set_config_dir(dirStr *C.char) {
 	config.OverrideConfigDir = C.GoString(dirStr)
+
+	// Redirect stderr to a log file so Go runtime panics are captured
+	// (app bundles don't have a visible stderr).
+	logPath := filepath.Join(config.OverrideConfigDir, "crash.log")
+	if f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
+		syscall.Dup2(int(f.Fd()), 2) // stderr → file
+		f.Close()
+	}
 }
 
 //export ipscan_new
@@ -66,7 +81,16 @@ func ipscan_new(configJSON *C.char) C.int {
 			json.Unmarshal([]byte(s), cfg)
 		}
 	} else {
-		cfg = config.DefaultAppConfig()
+		// Load persisted config from disk; fall back to defaults on error.
+		loaded, err := config.Load()
+		if err != nil || loaded == nil {
+			cfg = config.DefaultAppConfig()
+		} else {
+			cfg = loaded
+			if cfg.Comments == nil {
+				cfg.Comments = make(map[string]string)
+			}
+		}
 	}
 
 	sm := scanner.NewStateMachine()
@@ -115,7 +139,9 @@ func ipscan_get_config(handle C.int) *C.char {
 	if inst == nil {
 		return C.CString("{}")
 	}
+	inst.configMu.RLock()
 	j, _ := json.Marshal(inst.config)
+	inst.configMu.RUnlock()
 	return C.CString(string(j))
 }
 
@@ -126,7 +152,16 @@ func ipscan_set_config(handle C.int, configJSON *C.char) C.int {
 		return -1
 	}
 	s := C.GoString(configJSON)
-	if err := json.Unmarshal([]byte(s), inst.config); err != nil {
+	inst.configMu.Lock()
+	err := json.Unmarshal([]byte(s), inst.config)
+	if err == nil {
+		// Persist so other bridge instances (and future launches) see
+		// the change. Without this every new window and every restart
+		// would silently fall back to compiled-in defaults.
+		_ = inst.config.Save()
+	}
+	inst.configMu.Unlock()
+	if err != nil {
 		return -1
 	}
 	return 0
@@ -202,8 +237,27 @@ func ipscan_start_scan(handle C.int, feederJSON *C.char) C.int {
 		return -4
 	}
 
-	// Create all fetchers
+	// Reload config from disk so Preferences changes made via another
+	// bridge instance (e.g. the Settings window) take effect for this
+	// scan. Falls back silently to the current in-memory config on error.
+	if loaded, err := config.Load(); err == nil && loaded != nil {
+		inst.configMu.Lock()
+		inst.config = loaded
+		if inst.config.Comments == nil {
+			inst.config.Comments = make(map[string]string)
+		}
+		inst.configMu.Unlock()
+	}
+
+	// Read a snapshot of config under lock to avoid races with setConfig
+	inst.configMu.RLock()
 	cfg := inst.config.Scanner
+	commentsSnapshot := make(map[string]string, len(inst.config.Comments))
+	for k, v := range inst.config.Comments {
+		commentsSnapshot[k] = v
+	}
+	inst.configMu.RUnlock()
+
 	pingTimeout := time.Duration(cfg.PingTimeout) * time.Millisecond
 	pingFetcher := fetcher.NewPingFetcher(cfg.SelectedPinger, pingTimeout, cfg.PingCount, cfg.ScanDeadHosts)
 	macFetcher := fetcher.NewMACFetcher()
@@ -221,7 +275,7 @@ func ipscan_start_scan(handle C.int, feederJSON *C.char) C.int {
 		fetcher.NewWebDetectFetcher(cfg.PortTimeout),
 		fetcher.NewNetBIOSInfoFetcher(cfg.PortTimeout),
 		fetcher.NewPacketLossFetcher(pingFetcher),
-		fetcher.NewCommentFetcher(inst.config.Comments),
+		fetcher.NewCommentFetcher(commentsSnapshot),
 	}
 
 	// Apply selected fetcher filter if configured
@@ -419,6 +473,8 @@ func ipscan_set_comment(handle C.int, ipStr *C.char, commentStr *C.char) C.int {
 	}
 	ip := C.GoString(ipStr)
 	comment := C.GoString(commentStr)
+
+	inst.configMu.Lock()
 	if inst.config.Comments == nil {
 		inst.config.Comments = make(map[string]string)
 	}
@@ -428,6 +484,7 @@ func ipscan_set_comment(handle C.int, ipStr *C.char, commentStr *C.char) C.int {
 		inst.config.Comments[ip] = comment
 	}
 	inst.config.Save()
+	inst.configMu.Unlock()
 	return 0
 }
 
@@ -438,6 +495,8 @@ func ipscan_get_comment(handle C.int, ipStr *C.char) *C.char {
 		return C.CString("")
 	}
 	ip := C.GoString(ipStr)
+	inst.configMu.RLock()
+	defer inst.configMu.RUnlock()
 	if inst.config.Comments != nil {
 		if c, ok := inst.config.Comments[ip]; ok {
 			return C.CString(c)
@@ -525,11 +584,13 @@ func ipscan_save_favorite(handle C.int, nameStr *C.char, feederJSON *C.char) C.i
 	}
 	name := C.GoString(nameStr)
 	feederArgs := C.GoString(feederJSON)
+	inst.configMu.Lock()
 	inst.config.Favorites = append(inst.config.Favorites, config.FavoriteEntry{
 		Name:       name,
 		FeederArgs: feederArgs,
 	})
 	inst.config.Save()
+	inst.configMu.Unlock()
 	return 0
 }
 
@@ -539,7 +600,9 @@ func ipscan_get_favorites(handle C.int) *C.char {
 	if inst == nil {
 		return C.CString("[]")
 	}
+	inst.configMu.RLock()
 	j, _ := json.Marshal(inst.config.Favorites)
+	inst.configMu.RUnlock()
 	return C.CString(string(j))
 }
 
@@ -550,6 +613,8 @@ func ipscan_delete_favorite(handle C.int, index C.int) C.int {
 		return -1
 	}
 	idx := int(index)
+	inst.configMu.Lock()
+	defer inst.configMu.Unlock()
 	if idx < 0 || idx >= len(inst.config.Favorites) {
 		return -2
 	}

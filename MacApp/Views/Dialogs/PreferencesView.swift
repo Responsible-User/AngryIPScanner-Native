@@ -21,8 +21,9 @@ struct PreferencesView: View {
                 }
                 .padding()
                 .frame(width: 480, height: 380)
-                .onDisappear {
-                    if let cfg = self.config {
+                .onChange(of: self.config) { _, newValue in
+                    // Save on every change, not just on close
+                    if let cfg = newValue {
                         bridge.setConfig(cfg)
                     }
                 }
