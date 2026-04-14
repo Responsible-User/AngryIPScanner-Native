@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace AngryIPScanner;
+namespace GoNetworkScanner;
 
 public partial class App : Application
 {

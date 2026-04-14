@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Threading;
-using AngryIPScanner.Bridge.Models;
+using GoNetworkScanner.Bridge.Models;
 
-namespace AngryIPScanner.Bridge;
+namespace GoNetworkScanner.Bridge;
 
 /// <summary>
 /// C# wrapper around the libipscan C API, mirroring the Swift IPScanBridge.
@@ -154,11 +154,120 @@ public sealed class IPScanBridge : INotifyPropertyChanged, IDisposable
         ScanState = "scanning";
     }
 
+    public void StartFileScan(string filePath)
+    {
+        Results.Clear();
+        Stats = new ScanStats();
+        Progress = null;
+
+        var feederJson = JsonSerializer.Serialize(
+            new FeederConfig { Type = "file", FilePath = filePath },
+            JsonOpts);
+
+        _resultCbDelegate = OnResultCallback;
+        _progressCbDelegate = OnProgressCallback;
+        NativeMethods.ipscan_set_result_callback(_handle, _resultCbDelegate, (IntPtr)_instanceId);
+        NativeMethods.ipscan_set_progress_callback(_handle, _progressCbDelegate, (IntPtr)_instanceId);
+
+        int rc = NativeMethods.ipscan_start_scan(_handle, feederJson);
+        if (rc != 0)
+        {
+            MessageBox.Show($"Failed to start file scan (error {rc})", "Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        ScanState = "scanning";
+    }
+
     public void StopScan()
     {
         NativeMethods.ipscan_stop_scan(_handle);
         if (ScanState == "scanning")
             ScanState = "stopping";
+    }
+
+    // ── Comments (per-IP annotations) ─────────────────────────
+
+    public string GetComment(string ip)
+    {
+        return NativeMethods.ReadAndFree(NativeMethods.ipscan_get_comment(_handle, ip)) ?? "";
+    }
+
+    public void SetComment(string ip, string comment)
+    {
+        NativeMethods.ipscan_set_comment(_handle, ip, comment);
+    }
+
+    // ── Result operations ─────────────────────────────────────
+
+    public void DeleteResult(string ip)
+    {
+        NativeMethods.ipscan_delete_result(_handle, ip);
+        for (int i = Results.Count - 1; i >= 0; i--)
+        {
+            if (Results[i].IP == ip) Results.RemoveAt(i);
+        }
+        RefreshStats();
+    }
+
+    // ── Favorites ─────────────────────────────────────────────
+
+    public void SaveFavorite(string name, string startIP, string endIP)
+    {
+        NativeMethods.ipscan_save_favorite(_handle, name, $"{startIP} - {endIP}");
+    }
+
+    public List<FavoriteEntry> GetFavorites()
+    {
+        var json = NativeMethods.ReadAndFree(NativeMethods.ipscan_get_favorites(_handle));
+        if (json == null) return [];
+        return JsonSerializer.Deserialize<List<FavoriteEntry>>(json, JsonOpts) ?? [];
+    }
+
+    public void DeleteFavorite(int index)
+    {
+        NativeMethods.ipscan_delete_favorite(_handle, index);
+    }
+
+    // ── Export (filtered by display mode) ─────────────────────
+
+    public bool ExportFiltered(string format, string path, string filter)
+        => NativeMethods.ipscan_export_filtered(_handle, format, path, filter) == 0;
+
+    // ── Openers (launch external tools on an IP) ──────────────
+
+    public void OpenInBrowser(string ip)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = $"http://{ip}",
+                UseShellExecute = true,
+            });
+        }
+        catch { /* best effort */ }
+    }
+
+    public void OpenSSH(string ip)       => LaunchCmd("ssh", ip);
+    public void OpenPing(string ip)      => LaunchCmd("ping", "-t", ip);
+    public void OpenTraceroute(string ip) => LaunchCmd("tracert", ip);
+
+    private static void LaunchCmd(string exe, params string[] args)
+    {
+        try
+        {
+            // Open a visible cmd window that runs the command and stays open (/K)
+            var joined = string.Join(" ", args);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/K {exe} {joined}",
+                UseShellExecute = true,
+            });
+        }
+        catch { /* best effort */ }
     }
 
     // ── Configuration ─────────────────────────────────────────
