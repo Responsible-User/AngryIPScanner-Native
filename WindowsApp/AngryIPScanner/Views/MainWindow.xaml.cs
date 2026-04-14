@@ -46,6 +46,34 @@ public partial class MainWindow : Window
 
         // Auto-detect local network
         AutoDetectLocalRange();
+
+        // Reflect the persisted pinger choice in the dropdown
+        LoadPingerSelection();
+    }
+
+    private void LoadPingerSelection()
+    {
+        var cfg = _bridge.GetConfig();
+        if (cfg?.Scanner?.SelectedPinger is not { } id) return;
+        foreach (ComboBoxItem item in PingerCombo.Items)
+        {
+            if ((string?)item.Tag == id)
+            {
+                PingerCombo.SelectedItem = item;
+                return;
+            }
+        }
+    }
+
+    private void Pinger_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (PingerCombo?.SelectedItem is not ComboBoxItem item) return;
+        if (item.Tag is not string pingerId) return;
+        var cfg = _bridge.GetConfig();
+        if (cfg == null) return;
+        if (cfg.Scanner.SelectedPinger == pingerId) return;
+        cfg.Scanner.SelectedPinger = pingerId;
+        _bridge.SetConfig(cfg);
     }
 
     // ── Bridge property changes → UI updates ─────────────────

@@ -108,6 +108,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Mode selector -->
@@ -140,10 +141,21 @@
                                   SelectionChanged="CidrPrefix_Changed"/>
                     </StackPanel>
 
+                    <!-- Scan type (pinger) dropdown -->
+                    <ComboBox x:Name="PingerCombo" Grid.Column="2" Width="130"
+                              Margin="0,0,12,0" SelectionChanged="Pinger_Changed"
+                              VerticalContentAlignment="Center"
+                              ToolTip="Scan type — how hosts are probed for reachability">
+                        <ComboBoxItem Content="Combined" Tag="pinger.combined" IsSelected="True"/>
+                        <ComboBoxItem Content="ICMP" Tag="pinger.icmp"/>
+                        <ComboBoxItem Content="TCP" Tag="pinger.tcp"/>
+                        <ComboBoxItem Content="UDP" Tag="pinger.udp"/>
+                    </ComboBox>
+
                     <!-- Start / Stop / Kill button -->
-                    <Button x:Name="StartButton" Grid.Column="2"
+                    <Button x:Name="StartButton" Grid.Column="3"
                             Content="Start" Width="88" Height="28"
-                            Margin="12,0,0,0" Click="StartStop_Click"/>
+                            Margin="0,0,0,0" Click="StartStop_Click"/>
                 </Grid>
             </Border>
 
@@ -194,9 +206,31 @@
                                         Binding="{Binding Hostname}"
                                         ElementStyle="{StaticResource Cell}"/>
 
-                    <DataGridTextColumn Header="Ports" Width="110"
-                                        Binding="{Binding Ports}"
-                                        ElementStyle="{StaticResource MonoCell}"/>
+                    <DataGridTextColumn Header="Ports" Width="220"
+                                        Binding="{Binding Ports}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource MonoCell}">
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                <Setter Property="ToolTip" Value="{Binding Ports}"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Filtered" Width="140"
+                                        Binding="{Binding FilteredPorts}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource MonoCell}">
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                <Setter Property="ToolTip">
+                                    <Setter.Value>
+                                        <MultiBinding StringFormat="{}Timed out — likely firewalled or a slow service: {0}">
+                                            <Binding Path="FilteredPorts"/>
+                                        </MultiBinding>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
                     <DataGridTextColumn Header="MAC Address" Width="145"
                                         Binding="{Binding MACAddress}"

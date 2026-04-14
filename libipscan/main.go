@@ -20,9 +20,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"sync"
-	"syscall"
 	"time"
 	"unsafe"
 
@@ -61,14 +59,6 @@ var (
 //export ipscan_set_config_dir
 func ipscan_set_config_dir(dirStr *C.char) {
 	config.OverrideConfigDir = C.GoString(dirStr)
-
-	// Redirect stderr to a log file so Go runtime panics are captured
-	// (app bundles don't have a visible stderr).
-	logPath := filepath.Join(config.OverrideConfigDir, "crash.log")
-	if f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-		syscall.Dup2(int(f.Fd()), 2) // stderr → file
-		f.Close()
-	}
 }
 
 //export ipscan_new

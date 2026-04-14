@@ -12,8 +12,8 @@ MacApp/Bridge/libipscan.h
 MacApp/GoNetworkScanner.xcodeproj/
 MacApp/build/
 .vscode/
-/legacy
 /.idea/
+/legacy
 TODO.md
 commit_msg.txt
 .claude/settings.local.json
