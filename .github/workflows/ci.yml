@@ -2,14 +2,17 @@ name: CI
 
 on:
   push:
-    branches: [master, mac-native, windows-native]
+    branches: [master, mac-native, windows-native, linux-native]
   pull_request:
     branches: [master]
 
 jobs:
+  # Go core compiles on all three OSes on every branch. The core is
+  # shared, so even a mac-native push must not break Windows/Linux.
   go-test:
-    name: Go Tests
+    name: Go Tests (${{ matrix.os }})
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
@@ -50,10 +53,18 @@ jobs:
         working-directory: libipscan
         run: go vet ./...
 
+  # UI builds gated by branch: skip the macOS Swift build on
+  # windows-native / linux-native pushes, skip the Windows WPF build on
+  # mac-native / linux-native pushes, and skip the Linux UI build on
+  # mac-native / windows-native pushes. master runs all three.
   mac-build:
     name: macOS App Build
     runs-on: macos-latest
     needs: go-test
+    if: >
+      github.event_name == 'pull_request' ||
+      github.ref == 'refs/heads/master' ||
+      github.ref == 'refs/heads/mac-native'
     steps:
       - uses: actions/checkout@v5
 
@@ -83,3 +94,52 @@ jobs:
           CODE_SIGN_ENTITLEMENTS=""
           ENABLE_HARDENED_RUNTIME=NO
           DEVELOPMENT_TEAM=""
+
+  windows-build:
+    name: Windows App Build
+    runs-on: windows-latest
+    needs: go-test
+    if: >
+      github.event_name == 'pull_request' ||
+      github.ref == 'refs/heads/master' ||
+      github.ref == 'refs/heads/windows-native'
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      - name: Build Go DLL
+        working-directory: libipscan
+        run: go build -buildmode=c-shared -o ../WindowsApp/AngryIPScanner/libipscan.dll
+        shell: bash
+
+      - name: Build WPF app
+        working-directory: WindowsApp
+        run: dotnet build AngryIPScanner/AngryIPScanner.csproj -c Release
+
+  linux-build:
+    name: Linux App Build
+    runs-on: ubuntu-latest
+    needs: go-test
+    if: >
+      github.event_name == 'pull_request' ||
+      github.ref == 'refs/heads/master' ||
+      github.ref == 'refs/heads/linux-native'
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      - name: Build Go .so
+        working-directory: libipscan
+        run: go build -buildmode=c-shared -o libipscan.so
+
+      # Placeholder: swap in GTK/Qt build steps once the LinuxApp
+      # target exists. For now just verifying the Go core builds.
+      - name: Confirm shared library
+        working-directory: libipscan
+        run: file libipscan.so
