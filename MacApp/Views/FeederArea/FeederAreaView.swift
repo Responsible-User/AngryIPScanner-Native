@@ -16,6 +16,7 @@ struct FeederAreaView: View {
     @State private var cidrPrefix: Int = 24
     @State private var didAutoFillCIDR = false
     @State private var filePath: String = ""
+    @State private var selectedPinger: String = "pinger.combined"
 
     var body: some View {
         HStack(spacing: 12) {
@@ -75,11 +76,13 @@ struct FeederAreaView: View {
                     TextField("File path", text: $filePath)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 250)
+                        .help("Any text file. IPv4, IPv6, hostnames (example.com), and IP:port (192.168.1.1:8080) are extracted automatically.")
                     Button("Browse...") {
                         let panel = NSOpenPanel()
                         panel.allowsMultipleSelection = false
                         panel.canChooseDirectories = false
                         panel.allowedContentTypes = [.plainText, .data]
+                        panel.message = "Select a text file containing IPs, hostnames, or IP:port entries (one per line, or any format — addresses are extracted by regex)."
                         if panel.runModal() == .OK, let url = panel.url {
                             filePath = url.path
                         }
@@ -88,6 +91,23 @@ struct FeederAreaView: View {
             }
 
             Spacer()
+
+            // Scan type (pinger) dropdown
+            Picker("", selection: $selectedPinger) {
+                Text("Combined").tag("pinger.combined")
+                Text("ICMP").tag("pinger.icmp")
+                Text("TCP").tag("pinger.tcp")
+                Text("UDP").tag("pinger.udp")
+            }
+            .pickerStyle(.menu)
+            .frame(width: 130)
+            .help("Scan type — how hosts are probed for reachability")
+            .onChange(of: selectedPinger) { _, newValue in
+                if var cfg = bridge.getConfig() {
+                    cfg.scanner.selectedPinger = newValue
+                    bridge.setConfig(cfg)
+                }
+            }
 
             // Start/Stop button
             Button(action: {
@@ -114,6 +134,11 @@ struct FeederAreaView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Previous scan results will be discarded.")
+            }
+        }
+        .onAppear {
+            if let cfg = bridge.getConfig() {
+                selectedPinger = cfg.scanner.selectedPinger
             }
         }
     }

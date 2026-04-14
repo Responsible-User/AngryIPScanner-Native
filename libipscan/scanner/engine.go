@@ -28,6 +28,13 @@ type Fetcher interface {
 	Cleanup()
 }
 
+// AbortBypasser is an optional interface that lets a fetcher run even
+// after subject.Aborted is set (e.g. the ports fetcher, which doubles
+// as a reachability probe when the user configures explicit ports).
+type AbortBypasser interface {
+	RunOnAborted() bool
+}
+
 // ScanProgress holds progress information sent to the UI.
 type ScanProgress struct {
 	CurrentIP     string  `json:"current_ip"`
@@ -256,7 +263,9 @@ func (e *Engine) runScan(ctx context.Context, feeder Feeder, cfg EngineConfig) {
 func (e *Engine) scanSubject(subject *ScanningSubject, result *ScanningResult) {
 	for i, fetcher := range e.fetchers {
 		if subject.Aborted {
-			break
+			if bp, ok := fetcher.(AbortBypasser); !ok || !bp.RunOnAborted() {
+				continue
+			}
 		}
 
 		var value interface{}

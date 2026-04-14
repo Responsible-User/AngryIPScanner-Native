@@ -15,15 +15,15 @@ struct AboutView: View {
                     .foregroundStyle(.green)
             }
 
-            Text("Angry IP Scanner")
+            Text("Go Network Scanner")
                 .font(.title)
                 .fontWeight(.bold)
 
-            Text("Version 4.0.0")
+            Text("Version 1.0.0-beta1")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            Text("Fast and friendly network scanner")
+            Text("Fast native network scanner")
                 .font(.body)
 
             Divider()
@@ -32,11 +32,11 @@ struct AboutView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Text("Licensed under GPLv2")
+            Text("MIT Licensed — inspired by Angry IP Scanner")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Link("angryip.org", destination: URL(string: "https://angryip.org")!)
+            Link("github.com/Responsible-User/GoNetworkScanner", destination: URL(string: "https://github.com/Responsible-User/GoNetworkScanner")!)
                 .font(.caption)
         }
         .padding(24)

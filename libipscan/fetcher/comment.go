@@ -3,7 +3,7 @@ package fetcher
 import (
 	"sync"
 
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 // CommentFetcher returns user-defined comments for IP addresses.

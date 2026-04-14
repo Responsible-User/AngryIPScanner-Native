@@ -9,9 +9,11 @@
 .claude/plans/
 MacApp/Bridge/libipscan.dylib
 MacApp/Bridge/libipscan.h
-MacApp/AngryIPScanner.xcodeproj/
+MacApp/GoNetworkScanner.xcodeproj/
+MacApp/build/
 .vscode/
 /.idea/
 /legacy
 TODO.md
 commit_msg.txt
+.claude/settings.local.json

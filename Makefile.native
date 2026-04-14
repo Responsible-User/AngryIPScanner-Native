@@ -12,18 +12,18 @@ go:
 
 # Build the Swift app (requires go target first)
 swift: go
-	cd MacApp && xcodebuild -scheme AngryIPScanner -configuration Debug build
+	cd MacApp && xcodebuild -scheme GoNetworkScanner -configuration Debug build
 
 # ── Windows ────────────────────────────────────────────────
 
 # Build the Go shared library for Windows (run on Windows with CGO)
 # Set GOARCH=arm64 or GOARCH=amd64 before invoking to cross-compile
 go-windows:
-	cd libipscan && GOOS=windows CGO_ENABLED=1 go build -buildmode=c-shared -o ../WindowsApp/AngryIPScanner/libipscan.dll
+	cd libipscan && GOOS=windows CGO_ENABLED=1 go build -buildmode=c-shared -o ../WindowsApp/GoNetworkScanner/libipscan.dll
 
 # Build the full Windows app (Go DLL + WPF)
 windows: go-windows
-	cd WindowsApp && dotnet build AngryIPScanner/AngryIPScanner.csproj -c Release
+	cd WindowsApp && dotnet build GoNetworkScanner/GoNetworkScanner.csproj -c Release
 
 # ── Shared ─────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ test:
 # Clean build artifacts
 clean:
 	rm -f MacApp/Bridge/libipscan.dylib MacApp/Bridge/libipscan.h
-	rm -f WindowsApp/AngryIPScanner/libipscan.dll WindowsApp/AngryIPScanner/libipscan.h
+	rm -f WindowsApp/GoNetworkScanner/libipscan.dll WindowsApp/GoNetworkScanner/libipscan.h
 	cd MacApp && xcodebuild clean 2>/dev/null || true
 	cd WindowsApp && dotnet clean 2>/dev/null || true
 

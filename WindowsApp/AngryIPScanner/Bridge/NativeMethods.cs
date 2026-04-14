@@ -23,6 +23,9 @@ internal static class NativeMethods
     // Instance lifecycle
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    internal static extern void ipscan_set_config_dir(string dir);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     internal static extern int ipscan_new(string? configJson);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

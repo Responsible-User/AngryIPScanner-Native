@@ -1,7 +1,7 @@
 package fetcher
 
 import (
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 // PingTTLFetcher shares ping results with PingFetcher and returns the TTL.

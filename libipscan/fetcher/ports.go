@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/angryip/libipscan/ipnet"
-	"github.com/angryip/libipscan/scanner"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/ipnet"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/pinger"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/scanner"
 )
 
 const (
@@ -39,6 +40,11 @@ func NewPortsFetcher(portString string, portTimeout int, adaptPortTimeout bool, 
 
 func (f *PortsFetcher) ID() string   { return "fetcher.ports" }
 func (f *PortsFetcher) Name() string { return "Ports" }
+
+// RunOnAborted lets the ports fetcher probe a "dead" host. This makes
+// the port scan itself a reachability check — useful for hosts (e.g.
+// Windows with RDP only) that don't respond to the generic pinger.
+func (f *PortsFetcher) RunOnAborted() bool { return true }
 
 func (f *PortsFetcher) Init() {
 	pi, err := ipnet.ParsePorts(f.portString)
@@ -77,8 +83,8 @@ func (f *PortsFetcher) scanPorts(subject *scanner.ScanningSubject) (open []int, 
 		return nil, nil
 	}
 
-	pi := f.portIterator.Copy()
-	if !pi.HasNext() {
+	ports := f.buildPortList(subject)
+	if len(ports) == 0 {
 		return nil, nil
 	}
 
@@ -86,8 +92,7 @@ func (f *PortsFetcher) scanPorts(subject *scanner.ScanningSubject) (open []int, 
 	filtered = make([]int, 0)
 	timeout := time.Duration(f.getAdaptedTimeout(subject)) * time.Millisecond
 
-	for pi.HasNext() {
-		port := pi.Next()
+	for _, port := range ports {
 		addr := net.JoinHostPort(subject.Address.String(), fmt.Sprintf("%d", port))
 
 		conn, err := net.DialTimeout("tcp", addr, timeout)
@@ -109,15 +114,61 @@ func (f *PortsFetcher) scanPorts(subject *scanner.ScanningSubject) (open []int, 
 	return
 }
 
+// buildPortList returns the ports to scan for this subject.
+// Always includes the configured port list; adds subject.RequestedPorts
+// (from file feeder ":port" annotations) if useRequestedPorts is enabled.
+func (f *PortsFetcher) buildPortList(subject *scanner.ScanningSubject) []int {
+	seen := make(map[int]struct{})
+	var ports []int
+
+	if f.portIterator != nil {
+		pi := f.portIterator.Copy()
+		for pi.HasNext() {
+			p := pi.Next()
+			if _, dup := seen[p]; dup {
+				continue
+			}
+			seen[p] = struct{}{}
+			ports = append(ports, p)
+		}
+	}
+
+	if f.useRequestedPorts {
+		for _, p := range subject.RequestedPorts {
+			if p <= 0 || p >= 65536 {
+				continue
+			}
+			if _, dup := seen[p]; dup {
+				continue
+			}
+			seen[p] = struct{}{}
+			ports = append(ports, p)
+		}
+	}
+
+	return ports
+}
+
+// adaptiveHardFloor prevents the adaptive timeout from ever dropping
+// below this (in ms) regardless of user config. Services like xrdp,
+// SQL Server, and RDS gateways routinely take >200 ms to accept on
+// LAN even when the pinger sees <5 ms RTT — 500 ms gives enough
+// headroom while still letting adaptation speed up WAN scans.
+const adaptiveHardFloor = 500
+
 func (f *PortsFetcher) getAdaptedTimeout(subject *scanner.ScanningSubject) int {
 	if !f.adaptPortTimeout {
 		return f.portTimeout
 	}
 	if cached, ok := subject.GetParameter(paramPingResult); ok {
-		if pr, ok := cached.(interface{ LongestTimeMs() int64 }); ok {
-			adapted := int(pr.LongestTimeMs()) * 3
-			if adapted < f.minPortTimeout {
-				adapted = f.minPortTimeout
+		if pr, ok := cached.(*pinger.PingResult); ok && pr.LongestTime > 0 {
+			adapted := int(pr.LongestTime) * 10
+			floor := f.minPortTimeout
+			if floor < adaptiveHardFloor {
+				floor = adaptiveHardFloor
+			}
+			if adapted < floor {
+				adapted = floor
 			}
 			if adapted > f.portTimeout {
 				adapted = f.portTimeout
@@ -171,10 +222,11 @@ func NewFilteredPortsFetcher(pf *PortsFetcher) *FilteredPortsFetcher {
 	return &FilteredPortsFetcher{portsFetcher: pf}
 }
 
-func (f *FilteredPortsFetcher) ID() string   { return "fetcher.ports.filtered" }
-func (f *FilteredPortsFetcher) Name() string { return "Filtered Ports" }
-func (f *FilteredPortsFetcher) Init()        {}
-func (f *FilteredPortsFetcher) Cleanup()     {}
+func (f *FilteredPortsFetcher) ID() string         { return "fetcher.ports.filtered" }
+func (f *FilteredPortsFetcher) Name() string       { return "Filtered Ports" }
+func (f *FilteredPortsFetcher) Init()              {}
+func (f *FilteredPortsFetcher) Cleanup()           {}
+func (f *FilteredPortsFetcher) RunOnAborted() bool { return true }
 
 func (f *FilteredPortsFetcher) Scan(subject *scanner.ScanningSubject) interface{} {
 	f.portsFetcher.scanPorts(subject)

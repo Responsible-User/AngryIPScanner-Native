@@ -1,10 +1,10 @@
 import Foundation
 
 /// Mirrors the Go AppConfig for JSON serialization across the FFI boundary.
-struct ScanConfig: Codable {
+struct ScanConfig: Codable, Equatable {
     var scanner: ScannerConfig
 
-    struct ScannerConfig: Codable {
+    struct ScannerConfig: Codable, Equatable {
         var maxThreads: Int
         var threadDelay: Int
         var scanDeadHosts: Bool

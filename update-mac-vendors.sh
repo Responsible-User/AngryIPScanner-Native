@@ -1,5 +1,6 @@
 #!/bin/bash
 # This scripts downloads and optimizes IEEE MAC vendor list
+# This was taken from Angry IP Scanner and is licensed under the GPLv2
 
 SED_APP='sed'
 if [ "$(uname)" = "Darwin" ]; then

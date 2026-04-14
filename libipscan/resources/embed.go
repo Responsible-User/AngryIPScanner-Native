@@ -4,7 +4,7 @@ package resources
 import (
 	_ "embed"
 
-	"github.com/angryip/libipscan/fetcher"
+	"github.com/Responsible-User/GoNetworkScanner/libipscan/fetcher"
 )
 
 //go:embed mac-vendors.txt

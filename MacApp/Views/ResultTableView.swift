@@ -39,16 +39,26 @@ struct ResultTableView: View {
             .width(min: 100, ideal: 180)
 
             TableColumn("Ports", value: \.portsSort) { result in
-                Text(valueAt(index: 4, in: result))
+                let ports = valueAt(index: 4, in: result)
+                Text(ports)
                     .font(.system(.body, design: .monospaced))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .help(ports.isEmpty ? "Open TCP ports" : ports)
             }
-            .width(min: 60, ideal: 100)
+            .width(min: 80, ideal: 220)
 
-            TableColumn("Filtered Ports", value: \.filteredPortsSort) { result in
-                Text(valueAt(index: 5, in: result))
+            TableColumn("Filtered", value: \.filteredPortsSort) { result in
+                let ports = valueAt(index: 5, in: result)
+                Text(ports)
                     .font(.system(.body, design: .monospaced))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .help(ports.isEmpty
+                          ? "Ports that timed out — likely firewalled or a slow service. Raise port timeout in Preferences if a known-open port keeps appearing here."
+                          : "Timed out (firewalled or slow): \(ports)")
             }
-            .width(min: 60, ideal: 80)
+            .width(min: 80, ideal: 140)
 
             TableColumn("MAC Address", value: \.macSort) { result in
                 Text(valueAt(index: 6, in: result))
@@ -129,6 +139,42 @@ struct ResultTableView: View {
             if let text = notification.userInfo?["text"] as? String {
                 findInResults(text: text)
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .selectAlive)) { _ in
+            selectedResults = Set(sortedResults.filter { $0.type == .alive || $0.type == .withPorts }.map(\.id))
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .selectDead)) { _ in
+            selectedResults = Set(sortedResults.filter { $0.type == .dead }.map(\.id))
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .selectWithPorts)) { _ in
+            selectedResults = Set(sortedResults.filter { $0.type == .withPorts }.map(\.id))
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .selectInvert)) { _ in
+            let allIDs = Set(sortedResults.map(\.id))
+            selectedResults = allIDs.subtracting(selectedResults)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .exportSelection)) { _ in
+            exportSelectedRows()
+        }
+    }
+
+    private func exportSelectedRows() {
+        guard !selectedResults.isEmpty else { return }
+        let panel = NSSavePanel()
+        panel.title = "Export Selected Rows"
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = "scan_selection.csv"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            let rows = bridge.filteredResults
+                .filter { selectedResults.contains($0.id) }
+                .map { r in
+                    ([r.ip] + r.values.map(\.description))
+                        .map { "\"\($0.replacingOccurrences(of: "\"", with: "\"\""))\"" }
+                        .joined(separator: ",")
+                }
+                .joined(separator: "\n")
+            try? rows.write(to: url, atomically: true, encoding: .utf8)
         }
     }
 
