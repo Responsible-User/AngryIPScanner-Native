@@ -41,6 +41,11 @@ func NewPortsFetcher(portString string, portTimeout int, adaptPortTimeout bool, 
 func (f *PortsFetcher) ID() string   { return "fetcher.ports" }
 func (f *PortsFetcher) Name() string { return "Ports" }
 
+// RunOnAborted lets the ports fetcher probe a "dead" host. This makes
+// the port scan itself a reachability check — useful for hosts (e.g.
+// Windows with RDP only) that don't respond to the generic pinger.
+func (f *PortsFetcher) RunOnAborted() bool { return true }
+
 func (f *PortsFetcher) Init() {
 	pi, err := ipnet.ParsePorts(f.portString)
 	if err == nil {
@@ -206,10 +211,11 @@ func NewFilteredPortsFetcher(pf *PortsFetcher) *FilteredPortsFetcher {
 	return &FilteredPortsFetcher{portsFetcher: pf}
 }
 
-func (f *FilteredPortsFetcher) ID() string   { return "fetcher.ports.filtered" }
-func (f *FilteredPortsFetcher) Name() string { return "Filtered Ports" }
-func (f *FilteredPortsFetcher) Init()        {}
-func (f *FilteredPortsFetcher) Cleanup()     {}
+func (f *FilteredPortsFetcher) ID() string         { return "fetcher.ports.filtered" }
+func (f *FilteredPortsFetcher) Name() string       { return "Filtered Ports" }
+func (f *FilteredPortsFetcher) Init()              {}
+func (f *FilteredPortsFetcher) Cleanup()           {}
+func (f *FilteredPortsFetcher) RunOnAborted() bool { return true }
 
 func (f *FilteredPortsFetcher) Scan(subject *scanner.ScanningSubject) interface{} {
 	f.portsFetcher.scanPorts(subject)

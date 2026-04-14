@@ -8,7 +8,9 @@ import (
 )
 
 // ProbeTCPPorts are tried in sequence until one works.
-var ProbeTCPPorts = []int{80, 7, 443, 139, 22}
+// Covers HTTP, HTTPS, SSH, NetBIOS, SMB, RDP, and HTTP alternates so
+// hosts that only expose one common service are still detected as alive.
+var ProbeTCPPorts = []int{80, 443, 22, 3389, 445, 139, 8080, 7}
 
 // TCPPinger probes host reachability via TCP connect. No root privileges required.
 type TCPPinger struct {

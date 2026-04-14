@@ -16,6 +16,7 @@ struct FeederAreaView: View {
     @State private var cidrPrefix: Int = 24
     @State private var didAutoFillCIDR = false
     @State private var filePath: String = ""
+    @State private var selectedPinger: String = "pinger.combined"
 
     var body: some View {
         HStack(spacing: 12) {
@@ -91,6 +92,23 @@ struct FeederAreaView: View {
 
             Spacer()
 
+            // Scan type (pinger) dropdown
+            Picker("", selection: $selectedPinger) {
+                Text("Combined").tag("pinger.combined")
+                Text("ICMP").tag("pinger.icmp")
+                Text("TCP").tag("pinger.tcp")
+                Text("UDP").tag("pinger.udp")
+            }
+            .pickerStyle(.menu)
+            .frame(width: 130)
+            .help("Scan type — how hosts are probed for reachability")
+            .onChange(of: selectedPinger) { _, newValue in
+                if var cfg = bridge.getConfig() {
+                    cfg.scanner.selectedPinger = newValue
+                    bridge.setConfig(cfg)
+                }
+            }
+
             // Start/Stop button
             Button(action: {
                 if bridge.scanState == "scanning" || bridge.scanState == "starting" {
@@ -116,6 +134,11 @@ struct FeederAreaView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Previous scan results will be discarded.")
+            }
+        }
+        .onAppear {
+            if let cfg = bridge.getConfig() {
+                selectedPinger = cfg.scanner.selectedPinger
             }
         }
     }
