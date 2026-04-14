@@ -26,7 +26,7 @@ public class ScannerConfig
     public int PingTimeout { get; set; } = 2000;
 
     [JsonPropertyName("pingCount")]
-    public int PingCount { get; set; } = 3;
+    public int PingCount { get; set; } = 5;
 
     [JsonPropertyName("skipBroadcastAddresses")]
     public bool SkipBroadcastAddresses { get; set; } = true;
@@ -41,12 +41,14 @@ public class ScannerConfig
     public bool AdaptPortTimeout { get; set; }
 
     [JsonPropertyName("minPortTimeout")]
-    public int MinPortTimeout { get; set; } = 100;
+    public int MinPortTimeout { get; set; } = 500;
 
     [JsonPropertyName("useRequestedPorts")]
-    public bool UseRequestedPorts { get; set; }
+    public bool UseRequestedPorts { get; set; } = true;
 
-    [JsonPropertyName("selectedFetcherIDs")]
+    // JSON key must match the Go struct tag `json:"selectedFetchers,omitempty"`;
+    // prior "selectedFetcherIDs" silently dropped every selection round-trip.
+    [JsonPropertyName("selectedFetchers")]
     public List<string>? SelectedFetcherIDs { get; set; }
 
     [JsonPropertyName("notAvailableText")]
@@ -66,6 +68,9 @@ public class FeederConfig
 
     [JsonPropertyName("endIP")]
     public string? EndIP { get; set; }
+
+    [JsonPropertyName("filePath")]
+    public string? FilePath { get; set; }
 }
 
 public class FetcherInfo

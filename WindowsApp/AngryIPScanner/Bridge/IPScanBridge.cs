@@ -109,6 +109,14 @@ public sealed class IPScanBridge : INotifyPropertyChanged, IDisposable
     public IPScanBridge(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
+
+        // Store config under %AppData%\GoNetworkScanner\config.json so
+        // preferences persist across launches and all bridge instances
+        // (main window + Preferences dialog) see the same file.
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var configDir = System.IO.Path.Combine(appData, "GoNetworkScanner");
+        NativeMethods.ipscan_set_config_dir(configDir);
+
         _handle = NativeMethods.ipscan_new(null);
 
         _instanceId = _nextId++;
