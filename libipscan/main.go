@@ -81,7 +81,16 @@ func ipscan_new(configJSON *C.char) C.int {
 			json.Unmarshal([]byte(s), cfg)
 		}
 	} else {
-		cfg = config.DefaultAppConfig()
+		// Load persisted config from disk; fall back to defaults on error.
+		loaded, err := config.Load()
+		if err != nil || loaded == nil {
+			cfg = config.DefaultAppConfig()
+		} else {
+			cfg = loaded
+			if cfg.Comments == nil {
+				cfg.Comments = make(map[string]string)
+			}
+		}
 	}
 
 	sm := scanner.NewStateMachine()
@@ -145,6 +154,12 @@ func ipscan_set_config(handle C.int, configJSON *C.char) C.int {
 	s := C.GoString(configJSON)
 	inst.configMu.Lock()
 	err := json.Unmarshal([]byte(s), inst.config)
+	if err == nil {
+		// Persist so other bridge instances (and future launches) see
+		// the change. Without this every new window and every restart
+		// would silently fall back to compiled-in defaults.
+		_ = inst.config.Save()
+	}
 	inst.configMu.Unlock()
 	if err != nil {
 		return -1
@@ -220,6 +235,18 @@ func ipscan_start_scan(handle C.int, feederJSON *C.char) C.int {
 		f = ff
 	default:
 		return -4
+	}
+
+	// Reload config from disk so Preferences changes made via another
+	// bridge instance (e.g. the Settings window) take effect for this
+	// scan. Falls back silently to the current in-memory config on error.
+	if loaded, err := config.Load(); err == nil && loaded != nil {
+		inst.configMu.Lock()
+		inst.config = loaded
+		if inst.config.Comments == nil {
+			inst.config.Comments = make(map[string]string)
+		}
+		inst.configMu.Unlock()
 	}
 
 	// Read a snapshot of config under lock to avoid races with setConfig
