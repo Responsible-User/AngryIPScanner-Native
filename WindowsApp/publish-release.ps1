@@ -2,16 +2,16 @@
 # Run this after: gh auth login --hostname github.com --web
 
 $ErrorActionPreference = "Stop"
-$tag      = "v1.0.0-win"
-$title    = "v1.0.0 - Windows (first release)"
+$tag      = "v1.0.0-win-alpha"
+$title    = "v1.0.0-win-alpha - Windows alpha (untested)"
 $repo     = "Responsible-User/GoNetworkScanner"
 $repoRoot = "C:\Users\JacobBraun.AzureAD\AngryIPScanner-Native"
-$notes    = "$repoRoot\WindowsApp\release\RELEASE_NOTES.md"
+$notes    = "$repoRoot\WindowsApp\RELEASE_NOTES.md"
 
 Push-Location $repoRoot
 try {
     # Annotated tag on current HEAD
-    & 'C:\Program Files\Git\bin\git.exe' tag -a $tag -m "Windows 1.0.0 release"
+    & 'C:\Program Files\Git\bin\git.exe' tag -a $tag -m "Windows 1.0.0 alpha"
     & 'C:\Program Files\Git\bin\git.exe' push origin $tag
 
     # Create release with all four artifacts
@@ -26,6 +26,7 @@ try {
         --repo $repo `
         --title $title `
         --notes-file $notes `
+        --prerelease `
         $assets
 } finally {
     Pop-Location
