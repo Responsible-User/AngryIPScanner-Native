@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace AngryIPScanner.Bridge.Models;
+namespace GoNetworkScanner.Bridge.Models;
 
 public class ScanConfig
 {
@@ -80,4 +80,16 @@ public class FetcherInfo
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+}
+
+/// <summary>
+/// A saved scan target. `FeederArgs` encodes the range ("192.168.1.1 - 192.168.1.255").
+/// </summary>
+public class FavoriteEntry
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("feederArgs")]
+    public string FeederArgs { get; set; } = "";
 }

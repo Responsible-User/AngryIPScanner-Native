@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace AngryIPScanner.Bridge.Models;
+namespace GoNetworkScanner.Bridge.Models;
 
 public enum ResultType { Unknown, Dead, Alive, WithPorts }
 

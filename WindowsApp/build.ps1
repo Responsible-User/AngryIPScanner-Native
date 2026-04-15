@@ -1,4 +1,4 @@
-# Build script for Angry IP Scanner (Windows)
+# Build script for Go Network Scanner (Windows)
 # Usage:
 #   .\build.ps1                    # Build for current architecture
 #   .\build.ps1 -Arch x64         # Build for x64
@@ -8,7 +8,7 @@
 # Prerequisites:
 #   - Go 1.21+ with CGO support
 #   - .NET 10 SDK
-#   - C compiler for CGO (MinGW-w64 GCC recommended)
+#   - C compiler for CGO (MinGW-w64 GCC; LLVM-MinGW recommended on arm64)
 
 param(
     [ValidateSet("x64", "arm64")]
@@ -33,10 +33,20 @@ $goArch = switch ($Arch) {
     "arm64" { "arm64" }
 }
 
-Write-Host "=== Angry IP Scanner Windows Build ===" -ForegroundColor Cyan
+# CGO needs a MinGW-target compiler matching GOARCH. LLVM-MinGW ships
+# both prefixes; use whichever matches the requested output arch.
+$cgoCC = switch ($Arch) {
+    "x64"   { "x86_64-w64-mingw32-gcc" }
+    "arm64" { "aarch64-w64-mingw32-gcc" }
+}
+
+Write-Host "=== Go Network Scanner Windows Build ===" -ForegroundColor Cyan
 Write-Host "  Architecture: $Arch (GOARCH=$goArch)"
 Write-Host "  Configuration: $Config"
 Write-Host ""
+
+$outDir = "$PSScriptRoot\GoNetworkScanner\bin\$Config\net10.0-windows"
+New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 # Step 1: Build Go shared library
 Write-Host "[1/2] Building libipscan.dll..." -ForegroundColor Yellow
@@ -45,18 +55,22 @@ try {
     $env:GOARCH = $goArch
     $env:GOOS = "windows"
     $env:CGO_ENABLED = "1"
-    go build -buildmode=c-shared -o "$PSScriptRoot\AngryIPScanner\libipscan.dll"
+    $env:CC = $cgoCC
+    # Drop the DLL next to the project so .NET's Content include picks it up,
+    # and also into the build output so the app is runnable immediately.
+    go build -buildmode=c-shared -o "$PSScriptRoot\GoNetworkScanner\libipscan.dll"
     if ($LASTEXITCODE -ne 0) { throw "Go build failed" }
+    Copy-Item "$PSScriptRoot\GoNetworkScanner\libipscan.dll" "$outDir\libipscan.dll" -Force
     Write-Host "  libipscan.dll built successfully" -ForegroundColor Green
 } finally {
     Pop-Location
 }
 
 # Step 2: Build .NET WPF application
-Write-Host "[2/2] Building AngryIPScanner.exe..." -ForegroundColor Yellow
-dotnet build "$PSScriptRoot\AngryIPScanner\AngryIPScanner.csproj" -c $Config
+Write-Host "[2/2] Building GoNetworkScanner.exe..." -ForegroundColor Yellow
+dotnet build "$PSScriptRoot\GoNetworkScanner\GoNetworkScanner.csproj" -c $Config
 if ($LASTEXITCODE -ne 0) { throw "dotnet build failed" }
 
 Write-Host ""
 Write-Host "Build complete!" -ForegroundColor Green
-Write-Host "Output: WindowsApp\AngryIPScanner\bin\$Config\net10.0-windows\"
+Write-Host "Output: WindowsApp\GoNetworkScanner\bin\$Config\net10.0-windows\"

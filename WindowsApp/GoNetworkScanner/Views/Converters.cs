@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace AngryIPScanner.Views;
+namespace GoNetworkScanner.Views;
 
 /// <summary>
 /// Converts a result type string ("alive", "dead", "with_ports", "unknown")

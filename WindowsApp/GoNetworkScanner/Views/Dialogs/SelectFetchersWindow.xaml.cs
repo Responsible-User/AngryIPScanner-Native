@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
-using AngryIPScanner.Bridge;
-using AngryIPScanner.Bridge.Models;
+using GoNetworkScanner.Bridge;
+using GoNetworkScanner.Bridge.Models;
 
-namespace AngryIPScanner.Views.Dialogs;
+namespace GoNetworkScanner.Views.Dialogs;
 
 public partial class SelectFetchersWindow : Window
 {

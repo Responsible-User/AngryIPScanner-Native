@@ -1,4 +1,4 @@
-<Window x:Class="AngryIPScanner.Views.Dialogs.PreferencesWindow"
+<Window x:Class="GoNetworkScanner.Views.Dialogs.PreferencesWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Preferences"

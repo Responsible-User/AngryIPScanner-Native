@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace AngryIPScanner.Bridge.Models;
+namespace GoNetworkScanner.Bridge.Models;
 
 public class ScanProgress
 {
