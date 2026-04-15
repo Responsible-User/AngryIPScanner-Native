@@ -33,6 +33,13 @@ $goArch = switch ($Arch) {
     "arm64" { "arm64" }
 }
 
+# CGO needs a MinGW-target compiler matching GOARCH. LLVM-MinGW ships
+# both prefixes; use whichever matches the requested output arch.
+$cgoCC = switch ($Arch) {
+    "x64"   { "x86_64-w64-mingw32-gcc" }
+    "arm64" { "aarch64-w64-mingw32-gcc" }
+}
+
 Write-Host "=== Go Network Scanner Windows Build ===" -ForegroundColor Cyan
 Write-Host "  Architecture: $Arch (GOARCH=$goArch)"
 Write-Host "  Configuration: $Config"
@@ -48,6 +55,7 @@ try {
     $env:GOARCH = $goArch
     $env:GOOS = "windows"
     $env:CGO_ENABLED = "1"
+    $env:CC = $cgoCC
     # Drop the DLL next to the project so .NET's Content include picks it up,
     # and also into the build output so the app is runnable immediately.
     go build -buildmode=c-shared -o "$PSScriptRoot\GoNetworkScanner\libipscan.dll"
