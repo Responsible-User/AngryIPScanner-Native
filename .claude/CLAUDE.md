@@ -22,9 +22,13 @@ do not modify it.
 ```
 libipscan (Go)  →  C-compatible shared library via cgo
     ├── darwin  →  libipscan.dylib  →  SwiftUI app (MacApp/)
-    ├── windows →  libipscan.dll    →  WPF app (WindowsApp/)
-    └── linux   →  libipscan.so     →  (planned) LinuxApp/
+    └── windows →  libipscan.dll    →  WPF app (WindowsApp/)
 ```
+
+Linux is unsupported. The Go core still builds for Linux, but no
+Linux UI has been written and no `linux-native` branch exists; if
+someone decides to build one, add the branch and a `LinuxApp/` dir
+then.
 
 The Go core owns scanning, pingers, fetchers, feeders, config, and
 exporters. Each native UI is a thin client that marshals JSON across
@@ -51,15 +55,12 @@ between windows; share state via the config file.
 
 ## Branch layout
 
-| Branch          | Purpose                                       |
-|-----------------|-----------------------------------------------|
-| `master`        | Integration branch. Releases tagged from here. |
-| `mac-native`    | Mac-focused work. Merge to master for release. |
-| `windows-native`| Windows WPF app work.                          |
-| `linux-native`  | (Placeholder) Linux UI work.                   |
+- `master` — integration branch, releases tagged from here
+- `mac-native` — Mac-focused work, merge to master for release
+- `windows-native` — Windows WPF app work
 
 Flow: work on the platform branch, merge `--no-ff` to master, then
-merge master back to the sibling platform branches to keep them in
+merge master back to the sibling platform branch to keep it in
 sync. See commit history for the convention.
 
 ## CI (`.github/workflows/ci.yml`)
@@ -68,13 +69,14 @@ sync. See commit history for the convention.
   The Go core is shared — regressions must be caught regardless of
   which branch is being pushed.
 - **UI builds gate by branch**: `mac-build` on `master` + `mac-native`,
-  `windows-build` on `master` + `windows-native`, `linux-build` on
-  `master` + `linux-native`. Pull requests to master run all three.
+  `windows-build` on `master` + `windows-native`. Pull requests to
+  master run both.
 - **Never put platform-specific syscalls in core Go files**. If you
   need `syscall.Dup2` / `SetStdHandle` / etc., put them in
   `*_darwin.go` / `*_windows.go` with build tags, or just drop the
-  feature. `syscall.Dup2` in particular does not exist on Windows or
-  `linux/arm64`.
+  feature.
+- **Go 1.26+ is required** — see `libipscan/go.mod`. The Go CGO runtime
+  calls and Windows syscall patterns we rely on assume the 1.26 toolchain.
 
 ## Build / test commands
 
