@@ -167,6 +167,8 @@ make -f Makefile.native xcode
 
 ### Windows / C#
 
+- **Project layout**: `WindowsApp/GoNetworkScanner/` (csproj dir), matching
+  the rebranded assembly name. Root namespace is `GoNetworkScanner`.
 - **JSON key for selected fetchers is `selectedFetchers`**, matching
   Go's `json:"selectedFetchers,omitempty"`. The old `selectedFetcherIDs`
   silently dropped every round-trip.
@@ -177,6 +179,26 @@ make -f Makefile.native xcode
   a `HeaderStyle` targeting `DataGridColumnHeader`.
 - **P/Invoke strings are ANSI, Cdecl**. See `NativeMethods.cs` for the
   pattern; don't mix UTF-16 in.
+- **Multi-window = new top-level Window, not tabs**. WPF has no native
+  tab bar like `NSWindow.tabbingMode`. File → New Window (Ctrl+N) spawns
+  a fresh `MainWindow` with its own `IPScanBridge`; the shared on-disk
+  config keeps them in sync.
+- **LLVM-MinGW via winget is required for CGO on Windows arm64**. The
+  default LLVM (MSVC target) rejects Go's `-mthreads` flag. Install
+  `MartinStorsjo.LLVM-MinGW.UCRT`. On machines with Application Control
+  policies that block binaries under `%LOCALAPPDATA%\Microsoft\WinGet`,
+  copy the toolchain into the user home dir and point `CC` at the copy.
+- **SendARP `PhyAddrLen` is the buffer size, not the output length**.
+  Must be set to 8 on input (matches the Java JNA binding). Passing 6
+  makes the call fail with a non-zero return and blank MACs.
+- **Windows ICMP uses `IcmpSendEcho` from iphlpapi.dll directly**
+  (`pinger.windows`). This is registered on Windows via `init()` in
+  `pinger/registry_windows.go` and set as the default in
+  `config/defaults_windows.go`. It's much faster than shelling out to
+  `ping.exe` and avoids spawning console windows.
+- **Shelling out to arp/ping from Go uses `CREATE_NO_WINDOW` (flag
+  `0x08000000`) in `SysProcAttr.CreationFlags`** — otherwise each
+  invocation flashes a console window.
 
 ## Memory system
 

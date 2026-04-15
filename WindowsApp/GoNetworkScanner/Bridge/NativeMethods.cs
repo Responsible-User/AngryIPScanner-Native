@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace AngryIPScanner.Bridge;
+namespace GoNetworkScanner.Bridge;
 
 /// <summary>
 /// P/Invoke declarations for the Go libipscan shared library.
@@ -82,6 +82,33 @@ internal static class NativeMethods
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     internal static extern int ipscan_export(int handle, string format, string path);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    internal static extern int ipscan_export_filtered(int handle, string format, string path, string filter);
+
+    // Comments (per-IP persistent annotations)
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    internal static extern void ipscan_set_comment(int handle, string ip, string comment);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    internal static extern IntPtr ipscan_get_comment(int handle, string ip);
+
+    // Result operations
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    internal static extern void ipscan_delete_result(int handle, string ip);
+
+    // Favorites (named scan targets)
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    internal static extern void ipscan_save_favorite(int handle, string name, string feederArgs);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern IntPtr ipscan_get_favorites(int handle);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void ipscan_delete_favorite(int handle, int index);
 
     // Memory management — must call after reading any returned string
 

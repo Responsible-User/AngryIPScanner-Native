@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace AngryIPScanner.Views.Dialogs;
+namespace GoNetworkScanner.Views.Dialogs;
 
 public partial class AboutWindow : Window
 {

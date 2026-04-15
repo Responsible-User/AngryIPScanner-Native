@@ -6,9 +6,13 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>AngryIPScanner</RootNamespace>
-    <AssemblyName>AngryIPScanner</AssemblyName>
+    <RootNamespace>GoNetworkScanner</RootNamespace>
+    <AssemblyName>GoNetworkScanner</AssemblyName>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationIcon>Resources/app.ico</ApplicationIcon>
+    <Product>Go Network Scanner</Product>
+    <AssemblyTitle>Go Network Scanner</AssemblyTitle>
+    <Version>1.0.0</Version>
   </PropertyGroup>
 
   <!-- Copy Go DLL to output -->
@@ -16,6 +20,10 @@
     <Content Include="libipscan.dll" Condition="Exists('libipscan.dll')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources/app.ico" Condition="Exists('Resources/app.ico')"/>
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-namespace AngryIPScanner.Helpers;
+namespace GoNetworkScanner.Helpers;
 
 public class RelayCommand : ICommand
 {

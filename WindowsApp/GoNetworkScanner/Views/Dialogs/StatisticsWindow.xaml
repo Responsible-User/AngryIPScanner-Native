@@ -1,0 +1,62 @@
+<Window x:Class="GoNetworkScanner.Views.Dialogs.StatisticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Scan Statistics"
+        Width="380" Height="260"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+    <DockPanel Margin="20">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="OK" Width="80" Click="OK_Click" IsDefault="True" IsCancel="True"/>
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="Scan Statistics" FontSize="16" FontWeight="SemiBold"
+                       Margin="0,0,0,12"/>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Hosts scanned:"
+                           Foreground="Gray" Margin="0,4"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TotalText"
+                           FontWeight="Medium" Margin="0,4"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Alive:"
+                           Foreground="Gray" Margin="0,4"/>
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,4">
+                    <Ellipse Width="8" Height="8" Fill="LimeGreen" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="AliveText" FontWeight="Medium"/>
+                    <TextBlock x:Name="AlivePctText" Foreground="Gray" Margin="6,0,0,0"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="With open ports:"
+                           Foreground="Gray" Margin="0,4"/>
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,4">
+                    <Ellipse Width="8" Height="8" Fill="DodgerBlue" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="PortsText" FontWeight="Medium"/>
+                    <TextBlock x:Name="PortsPctText" Foreground="Gray" Margin="6,0,0,0"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Dead:"
+                           Foreground="Gray" Margin="0,4"/>
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,4">
+                    <Ellipse Width="8" Height="8" Fill="IndianRed" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="DeadText" FontWeight="Medium"/>
+                    <TextBlock x:Name="DeadPctText" Foreground="Gray" Margin="6,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </DockPanel>
+</Window>
